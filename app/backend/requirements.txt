@@ -1,0 +1,19 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+python-dotenv
+sqlalchemy
+psycopg2-binary
+supabase
+
+# ML inference deps (SHM is real; others are lightweight stubs)
+pandas
+numpy
+scipy
+scikit-learn
+xgboost
+lightgbm
+rainflow
+joblib
+openpyxl

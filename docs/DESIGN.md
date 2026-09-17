@@ -1,486 +1,299 @@
-# Dub — Style Reference
-> frosted link dashboard on rice paper
-
-**Theme:** light
-
-Dub's visual system is a quiet, almost editorial SaaS aesthetic — a near-white canvas held together by hairline borders rather than elevation, with dense monochrome typography doing the structural work and one electric blue (#2563eb) doing the talking. Surfaces stay flat and borderless-looking at a glance, but every container carries a 1px #e5e5e5 edge that creates a printed-document feel. The personality comes from a small vocabulary of colored 'feature pill' accents (orange, green, violet) that float above the otherwise neutral palette, and from Satoshi-weight-500 display headlines that read as confident and contemporary without being loud. Components are compact and dense: 8px gaps, 12px card radius, pill-shaped tags at 9999px, and ghost controls instead of heavy filled buttons.
-
-## Tokens — Colors
-
-| Name | Value | Token | Role |
-|------|-------|-------|------|
-| Canvas White | `#ffffff` | `--color-canvas-white` | Page background, card surfaces, popover panels — the absolute base of every screen |
-| Paper Mist | `#f5f5f5` | `--color-paper-mist` | Subtle alt-surface for nested cards, secondary panels, and hover fills |
-| Ash | `#e5e5e5` | `--color-ash` | Hairline borders on cards, inputs, and dividers — the structural line that holds the system together |
-| Smoke | `#d4d4d4` | `--color-smoke` | Stronger borders for emphasis containers and secondary button outlines |
-| Pebble | `#c8c8c8` | `--color-pebble` | Medium-contrast borders, control outlines, and structural separators. Do not promote it to the primary CTA color |
-| Midnight Ink | `#0a0a0a` | `--color-midnight-ink` | Primary button text, high-emphasis buttons, nav text — near-black for maximum contrast |
-| Charcoal | `#171717` | `--color-charcoal` | Body text, button text, default heading color — slightly softer than pure black |
-| Graphite | `#262626` | `--color-graphite` | Secondary text, icon strokes, subtle UI elements |
-| Slate | `#404040` | `--color-slate` | Tertiary text, nav hover states, subdued iconography |
-| Steel | `#525252` | `--color-steel` | Muted body text, helper text, less-prominent labels |
-| Fog | `#737373` | `--color-fog` | Placeholder text, disabled states, link text in rest state |
-| Silver | `#a3a3a3` | `--color-silver` | Disabled iconography, decorative strokes, very light dividers |
-| Electric Blue | `#2563eb` | `--color-electric-blue` | Primary brand color — logo, links, key metric highlights, active states, icon accents. Saturated blue against white gives the system its one moment of visual voltage |
-| Deep Sapphire | `#1e40af` | `--color-deep-sapphire` | Primary action button background, high-emphasis CTA fill — the single committed action color, used sparingly so it earns attention |
-| Soft Mint | `#dcfce7` | `--color-soft-mint` | Gray outline accent for tags, dividers, and focused UI edges. Use as a supporting accent, not as a status color |
-| Vivid Green | `#16a34a` | `--color-vivid-green` | Green text accent for links, tags, and emphasized short phrases. Use as a supporting accent, not as a status color |
-| Tangerine | `#ea580c` | `--color-tangerine` | Orange text accent for links, tags, and emphasized short phrases. |
-| Lavender | `#7c3aed` | `--color-lavender` | Violet text accent for links, tags, and emphasized short phrases. |
-| Conic Spectrum | `conic-gradient(from -81deg, #ff0000, #eab308 99deg, #5cff80 162deg, #00fff9 216deg, #3a8bfd 288deg, #855afc)` | `--color-conic-spectrum` | Decorative gradient — used as full-spectrum conic gradient on brand visuals and logo, never on UI elements |
-| Primary Action Fill | `#000000` | `--color-primary-action-fill` | High-contrast neutral action fill for primary buttons on light surfaces. Use as the primary filled action background |
-
-## Tokens — Typography
-
-### Satoshi — Display headings — used only at 36–48px for hero and section titles. Weight 500 (medium, not bold) is the signature: headings feel confident and modern but never shout. Satoshi's geometric proportions give the type a slightly editorial, contemporary feel that Inter body text can't replicate. · `--font-satoshi`
-- **Substitute:** Inter (weight 500, letter-spacing -0.02em) or General Sans
-- **Weights:** 500
-- **Sizes:** 36px, 40px, 48px
-- **Line height:** 1.0–1.11
-- **Letter spacing:** normal
-- **Role:** Display headings — used only at 36–48px for hero and section titles. Weight 500 (medium, not bold) is the signature: headings feel confident and modern but never shout. Satoshi's geometric proportions give the type a slightly editorial, contemporary feel that Inter body text can't replicate.
-
-### Inter — Body, UI labels, navigation, subheadings, small headings. Inter is the workhorse — handles everything from 11px micro-labels to 30px secondary headlines. Weight 400 is default body, 500 for emphasis and button labels, 600 reserved for important UI labels. The 16px size at lineHeight 1.5 is the most frequent single step (1220 occurrences), confirming 16px as the canonical body size. · `--font-inter`
-- **Substitute:** Inter (native)
-- **Weights:** 400, 500, 600
-- **Sizes:** 8px, 10px, 11px, 12px, 13px, 14px, 16px, 18px, 20px, 24px, 30px
-- **Line height:** 1.33–1.56
-- **Role:** Body, UI labels, navigation, subheadings, small headings. Inter is the workhorse — handles everything from 11px micro-labels to 30px secondary headlines. Weight 400 is default body, 500 for emphasis and button labels, 600 reserved for important UI labels. The 16px size at lineHeight 1.5 is the most frequent single step (1220 occurrences), confirming 16px as the canonical body size.
-
-### Geist Mono — Code snippets, technical metadata, inline monospace tokens. Used at 12–14px in code blocks and 24px for large code display elements. Provides the developer-tool credibility that matches Dub's product positioning. · `--font-geist-mono`
-- **Substitute:** JetBrains Mono or IBM Plex Mono
-- **Weights:** 400, 500
-- **Sizes:** 12px, 14px, 24px
-- **Line height:** 1.0–1.43
-- **Role:** Code snippets, technical metadata, inline monospace tokens. Used at 12–14px in code blocks and 24px for large code display elements. Provides the developer-tool credibility that matches Dub's product positioning.
-
-### Type Scale
-
-| Role | Size | Line Height | Letter Spacing | Token |
-|------|------|-------------|----------------|-------|
-| caption | 11px | 1.5 | — | `--text-caption` |
-| body | 14px | 1.43 | — | `--text-body` |
-| body-lg | 16px | 1.5 | — | `--text-body-lg` |
-| body-xl | 18px | 1.56 | — | `--text-body-xl` |
-| subheading | 20px | 1.4 | — | `--text-subheading` |
-| heading-sm | 24px | 1.33 | — | `--text-heading-sm` |
-| heading | 30px | 1.38 | — | `--text-heading` |
-| heading-lg | 36px | 1.11 | — | `--text-heading-lg` |
-| display | 48px | 1 | — | `--text-display` |
-
-## Tokens — Spacing & Shapes
-
-**Base unit:** 4px
-
-**Density:** compact
-
-### Spacing Scale
-
-| Name | Value | Token |
-|------|-------|-------|
-| 4 | 4px | `--spacing-4` |
-| 8 | 8px | `--spacing-8` |
-| 12 | 12px | `--spacing-12` |
-| 16 | 16px | `--spacing-16` |
-| 20 | 20px | `--spacing-20` |
-| 24 | 24px | `--spacing-24` |
-| 28 | 28px | `--spacing-28` |
-| 32 | 32px | `--spacing-32` |
-| 36 | 36px | `--spacing-36` |
-| 40 | 40px | `--spacing-40` |
-| 48 | 48px | `--spacing-48` |
-| 56 | 56px | `--spacing-56` |
-| 64 | 64px | `--spacing-64` |
-| 80 | 80px | `--spacing-80` |
-| 96 | 96px | `--spacing-96` |
-| 112 | 112px | `--spacing-112` |
-
-### Border Radius
-
-| Element | Value |
-|---------|-------|
-| tags | 9999px |
-| cards | 12px |
-| inputs | 6px |
-| buttons | 8px |
-| largeCards | 16px |
-
-### Shadows
-
-| Name | Value | Token |
-|------|-------|-------|
-| subtle | `rgba(0, 0, 0, 0.05) 0px 1px 2px 0px` | `--shadow-subtle` |
-| sm | `rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0...` | `--shadow-sm` |
-| sm-2 | `rgba(0, 0, 0, 0.2) 0px 2px 6px 0px inset` | `--shadow-sm-2` |
-| subtle-2 | `rgba(0, 0, 0, 0.1) 0px 0px 0px 4px` | `--shadow-subtle-2` |
-| md | `rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1)...` | `--shadow-md` |
-| lg | `rgba(0, 0, 0, 0.09) 0px 20px 20px 0px` | `--shadow-lg` |
-| subtle-3 | `rgb(255, 255, 255) 0px 0px 0px 3px, rgb(0, 0, 0) 0px 0px ...` | `--shadow-subtle-3` |
-
-### Layout
-
-- **Page max-width:** 1200px
-- **Section gap:** 64px
-- **Card padding:** 16px
-- **Element gap:** 8px
-
-## Components
-
-### Ghost Nav Button
-**Role:** Navigation bar item
-
-Transparent background, #171717 text, 9999px radius, no border, 16px horizontal padding. Used for top-level nav items like Product, Solutions, Resources, Enterprise. No visible border until hover.
-
-### Outlined Nav Button
-**Role:** Secondary nav action (Log in)
-
-White background (#ffffff), #171717 text, 1px #e5e5e5 border, 8px radius, 16px horizontal padding. Compact and quiet — the 'I'm here but I don't need to be seen' variant.
-
-### Filled Dark CTA
-**Role:** Primary action button (Sign up)
-
-Near-black background (#0a0a0a or #171717), white text, 8px radius, 16px horizontal padding. The committed action — used once per surface for the primary conversion goal.
-
-### Outlined Action Button
-**Role:** Secondary or utility action (Learn more, View invoices)
-
-White background, #171717 text, 1px #e5e5e5 border, 8px radius, 12px vertical / 16px horizontal padding. The workhorse button — used for most non-primary actions throughout the UI.
-
-### Pill Feature Tag
-**Role:** Feature category indicator in hero and nav
-
-Transparent or white background, small colored icon (orange/violet/green emoji-style glyph), #171717 label text, 9999px radius, 12px vertical / 16px horizontal padding. These floating pills (Affiliate Programs, Conversion Analytics, Short Links) are the system's signature decorative element.
-
-### Pill Badge
-**Role:** Status, count, or label indicator
-
-Transparent or white background, #0a0a0a text, 9999px radius, minimal padding. Used for small notification dots, version labels, and category markers.
-
-### Dashboard Card
-**Role:** Primary product surface container
-
-White background (#ffffff), 1px #e5e5e5 border, 12px radius, 8px internal padding. The most frequent component (57 variants) — flat, border-defined, no shadow. Rely on borders and spacing for visual structure, not elevation.
-
-### Elevated Feature Card
-**Role:** Showcase or feature card with depth
-
-White background, 16px radius, 16px padding, subtle box-shadow: rgba(0,0,0,0.1) 0px 0px 0px 4px ring effect. Used sparingly to lift hero product mockups and featured content above surrounding flat cards.
-
-### Muted Alt Card
-**Role:** Secondary panel or grouped content surface
-
-Light gray background (#fafafa), 16px radius, 16px padding, no border. Provides tonal contrast when nesting content inside a white card or on the white canvas.
-
-### Dashboard Table Row
-**Role:** Data table body row
-
-Transparent or white background, 1px #e5e5e5 bottom border, 16px row height, 14–16px text. Minimal vertical density — rows breathe with generous padding for scannability.
-
-### Status Badge (Pending/Completed)
-**Role:** Row-level state indicator in tables
-
-Tinted background (soft mint #dcfce7 for completed, light yellow/orange wash for pending), small colored dot icon, dark text, pill radius (9999px), 6px vertical / 10px horizontal padding. Compact inline state communication.
-
-### Sidebar Nav Item
-**Role:** Dashboard sidebar navigation
-
-Transparent or light blue (#dbeaff) active background, 8px radius, #171717 text, 12px vertical / 8px horizontal padding. Active state uses a soft chromatic fill rather than a bold left-border indicator.
-
-### Input Field
-**Role:** Form input, search, URL field
-
-White background, #111827 text, 1px #000000 border (distinctive — inputs use near-black border instead of #e5e5e5 for emphasis), 6px radius, 8px vertical / 12px horizontal padding. The black border is a signature: inputs feel important, not optional.
-
-### Logo Cloud Item
-**Role:** Customer/social proof logo display
-
-Transparent background, grayscale (#262626 to #737373) wordmark, no border, centered in grid cell. Logos desaturated to harmonize with monochrome palette — color appears only in active or interactive states.
-
-### Product Mockup Container
-**Role:** Hero screenshot or dashboard preview frame
-
-White background, 16px top-left/top-right radius (asymmetric — bottom is flush), subtle 4px outer ring shadow for depth. Container is a window into the product, not a framed picture — it sits on the canvas like a floating panel.
-
-## Do's and Don'ts
-
-### Do
-- Use #e5e5e5 for all container borders — 1px solid is the default structural line, not shadows
-- Reserve #1e40af (Deep Sapphire) for exactly one primary action per surface — never use it decoratively
-- Use Satoshi weight 500 at 36–48px for display headlines; switch to Inter for everything 30px and below
-- Use 9999px radius for all tags, badges, and pill-shaped indicators; 8px for buttons; 12px for cards; 16px for large feature cards
-- Use 16px as the canonical body text size with lineHeight 1.5; drop to 14px for dense data and 11–12px for micro-labels
-- Apply the soft tint palette (#dcfce7 mint, #dbeaff blue, light yellow) to small badge backgrounds and feature highlights — not to large surfaces
-- Keep imagery as product UI mockups and desaturated logos; avoid stock photography and decorative illustrations
-
-### Don't
-- Don't use heavy drop shadows for card elevation — the system relies on 1px borders, not depth, to define containers
-- Don't use pure black (#000000) for body text — use #171717 or #0a0a0a for slightly softer contrast
-- Don't apply the Electric Blue (#2563eb) to large background fills — it's a highlight color, not a surface color
-- Don't use multiple chromatic colors on a single component — each pill or feature tag gets exactly one accent
-- Don't use Satoshi at body sizes — Satoshi is display-only (36px+); Inter handles everything below 30px
-- Don't use radii outside the defined vocabulary (9999px, 16px, 12px, 8px, 6px) — ad-hoc rounding breaks the system's rhythm
-- Don't use color for decorative gradients on UI elements — the conic spectrum gradient is reserved for the logo and brand visuals only
-
-## Surfaces
-
-| Level | Name | Value | Purpose |
-|-------|------|-------|---------|
-| 0 | Canvas | `#ffffff` | Page background — the base layer, always pure white |
-| 1 | Paper | `#f5f5f5` | Alt-section backgrounds, nested panel surfaces, subtle hover fills |
-| 2 | Card | `#ffffff` | Product cards, dashboard surfaces, popovers — white-on-white separated by 1px #e5e5e5 border |
-| 3 | Tinted Accent | `#dcfce7` | Decorative wash for feature highlights and 'new' badges |
-
-## Elevation
-
-- **Primary buttons:** `rgba(0, 0, 0, 0.05) 0px 1px 2px 0px`
-- **Elevated cards:** `rgba(0, 0, 0, 0.1) 0px 0px 0px 4px`
-- **Feature showcase cards:** `rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1) 0px 4px 6px -4px`
-- **Product mockup frames:** `rgba(0, 0, 0, 0.1) 0px 0px 0px 4px`
-
-## Imagery
-
-Imagery is product-first, not lifestyle. The hero centers a large dashboard screenshot — a real product mockup with sidebar nav, data table, and floating UI elements — presented as a flat panel on the white canvas. Customer logos appear in a desaturated grayscale grid (beehiv, superpower, Chatbase, etc.) for social proof, stripped of color so the page's single blue accent stays dominant. Floating partner cards (small profile + revenue/payout tiles) drift around editorial text blocks in the lower section, giving a sense of depth without using shadows on the text itself. The dotted grid background pattern is a signature: a fine array of small dots at very low opacity creates texture and a sense of a design system / blueprint surface, reinforcing the 'modern link attribution platform' positioning. Iconography is small, outlined-to-filled, and uses the accent palette (orange tangerine, violet lavender, green mint) for feature tags. No photography, no illustrations, no 3D — the product UI IS the visual language.
-
-## Layout
-
-The page follows a centered, max-width contained model at approximately 1200px. The hero is a centered text stack with three floating feature pills (Affiliate Programs, Conversion Analytics, Short Links) arranged horizontally above a large product mockup. Sections stack vertically with consistent 64px gaps, alternating between white canvas and the #f5f5f5 paper mist for tonal separation. The lower section uses a z-pattern: editorial text centered in the middle third, with floating UI cards anchored at the left and right margins, creating an asymmetric, magazine-like rhythm. The logo cloud is a simple 5×2 grid centered on the page. Navigation is a minimal top bar — logo left, nav center, two-button cluster (ghost Log in + filled Sign up) right — with no sticky or mega-menu behavior. The dashboard mockup in the hero shows a classic 2-column app shell: fixed sidebar (240px-ish) + content area, establishing the product's information density for visitors before they scroll.
-
-## Agent Prompt Guide
-
-## Quick Color Reference
-- Text primary: #171717
-- Text muted: #737373
-- Background: #ffffff
-- Surface alt: #f5f5f5
-- Border: #e5e5e5
-- Accent: #2563eb
-- primary action: #000000 (filled action)
-
-## Example Component Prompts
-1. **Hero Feature Pill**: Transparent background, 9999px radius, 8px vertical / 16px horizontal padding. Small colored emoji-style icon (orange tangerine #ea580c for 'Short Links', violet #7c3aed for 'Conversion Analytics', green #16a34a for 'Affiliate Programs') + 14px Inter weight 500 #171717 label. No border.
-
-2. **Dashboard Card**: White (#ffffff) background, 1px #e5e5e5 border, 12px radius, 16px padding. Content inside uses 14–16px Inter weight 400 #171717. No shadow — borders define the container.
-
-3. Create a Primary Action Button: #000000 background, #ffffff text, 9999px radius, compact pill padding. Use this filled treatment for the main CTA.
-
-4. **Outlined Action Button**: White (#ffffff) background, #171717 text, 1px #e5e5e5 border, 8px radius, 6px vertical / 12px horizontal padding. 14px Inter weight 500. Use for secondary actions like 'Learn more' or 'View invoices'.
-
-5. **Display Headline**: Satoshi weight 500, 48px, lineHeight 1.0, color #171717. No letter-spacing adjustment. Use only for the largest hero and section titles — switch to Inter for anything 30px or below.
-
-## Border-First Elevation Philosophy
-
-Dub deliberately uses 1px borders over shadows as the primary container-defining mechanism. The base border color is #e5e5e5 at 1px solid — used 1942 times across the system, making it the most deployed visual element. Shadows are reserved for three specific cases: (1) a barely-there 1px lift on primary buttons (rgba(0,0,0,0.05) 0px 1px 2px), (2) a 4px outer ring on elevated feature cards and product mockups to create a 'floating panel' effect, and (3) the layered 10px/4px shadow stack on hero showcase elements. The philosophy: borders create a printed-document clarity that's better for information-dense SaaS UIs, while shadows are saved for moments that need to truly pop off the page. This is the opposite of Material Design's shadow-heavy approach.
-
-## Pill Architecture
-
-The 9999px radius is deployed 367 times — the second most common radius token. It's used for: feature category tags, status badges, notification dots, partner avatars, and pill-shaped nav elements. Combined with the 8px and 12px radii for buttons and cards, the system has a clear three-tier radius vocabulary: pills (9999px) for tags and badges, medium (8–12px) for buttons and cards, large (16px) for feature surfaces. This tight radius discipline is a key part of what makes the design feel intentional and cohesive.
-
-## Similar Brands
-
-- **Linear** — Same light-canvas + monochrome + single-accent approach, with similar compact density and 1px-border container treatment over heavy shadows
-- **Vercel** — Geometric sans-serif headlines at weight 500 (not bold), hairline borders, white-on-white card surfaces with 12px radius, and a restrained color palette that lets the product UI do the visual work
-- **Cal.com** — Open-source SaaS with the same pill-button + flat card aesthetic, similar use of small colored feature tags floating above monochrome layouts, and Inter as the primary workhorse font
-- **Plausible Analytics** — Editorial-meets-dashboard layout with centered text stacks, floating UI cards, dotted grid background texture, and a near-monochrome palette with a single accent color for emphasis
-- **Raycast** — Compact information density, border-defined containers instead of shadows, pill-shaped status indicators, and a confident use of one saturated accent (blue) against near-black text
-
-## Quick Start
-
-### CSS Custom Properties
-
-```css
-:root {
-  /* Colors */
-  --color-canvas-white: #ffffff;
-  --color-paper-mist: #f5f5f5;
-  --color-ash: #e5e5e5;
-  --color-smoke: #d4d4d4;
-  --color-pebble: #c8c8c8;
-  --color-midnight-ink: #0a0a0a;
-  --color-charcoal: #171717;
-  --color-graphite: #262626;
-  --color-slate: #404040;
-  --color-steel: #525252;
-  --color-fog: #737373;
-  --color-silver: #a3a3a3;
-  --color-electric-blue: #2563eb;
-  --color-deep-sapphire: #1e40af;
-  --color-soft-mint: #dcfce7;
-  --color-vivid-green: #16a34a;
-  --color-tangerine: #ea580c;
-  --color-lavender: #7c3aed;
-  --color-conic-spectrum: #8b5cf6;
-  --gradient-conic-spectrum: conic-gradient(from -81deg, #ff0000, #eab308 99deg, #5cff80 162deg, #00fff9 216deg, #3a8bfd 288deg, #855afc);
-  --color-primary-action-fill: #000000;
-
-  /* Typography — Font Families */
-  --font-satoshi: 'Satoshi', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  /* Typography — Scale */
-  --text-caption: 11px;
-  --leading-caption: 1.5;
-  --text-body: 14px;
-  --leading-body: 1.43;
-  --text-body-lg: 16px;
-  --leading-body-lg: 1.5;
-  --text-body-xl: 18px;
-  --leading-body-xl: 1.56;
-  --text-subheading: 20px;
-  --leading-subheading: 1.4;
-  --text-heading-sm: 24px;
-  --leading-heading-sm: 1.33;
-  --text-heading: 30px;
-  --leading-heading: 1.38;
-  --text-heading-lg: 36px;
-  --leading-heading-lg: 1.11;
-  --text-display: 48px;
-  --leading-display: 1;
-
-  /* Typography — Weights */
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-
-  /* Spacing */
-  --spacing-unit: 4px;
-  --spacing-4: 4px;
-  --spacing-8: 8px;
-  --spacing-12: 12px;
-  --spacing-16: 16px;
-  --spacing-20: 20px;
-  --spacing-24: 24px;
-  --spacing-28: 28px;
-  --spacing-32: 32px;
-  --spacing-36: 36px;
-  --spacing-40: 40px;
-  --spacing-48: 48px;
-  --spacing-56: 56px;
-  --spacing-64: 64px;
-  --spacing-80: 80px;
-  --spacing-96: 96px;
-  --spacing-112: 112px;
-
-  /* Layout */
-  --page-max-width: 1200px;
-  --section-gap: 64px;
-  --card-padding: 16px;
-  --element-gap: 8px;
-
-  /* Border Radius */
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-2xl-2: 20px;
-  --radius-full: 9999px;
-
-  /* Named Radii */
-  --radius-tags: 9999px;
-  --radius-cards: 12px;
-  --radius-inputs: 6px;
-  --radius-buttons: 8px;
-  --radius-largecards: 16px;
-
-  /* Shadows */
-  --shadow-subtle: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
-  --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
-  --shadow-sm-2: rgba(0, 0, 0, 0.2) 0px 2px 6px 0px inset;
-  --shadow-subtle-2: rgba(0, 0, 0, 0.1) 0px 0px 0px 4px;
-  --shadow-md: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1) 0px 4px 6px -4px;
-  --shadow-lg: rgba(0, 0, 0, 0.09) 0px 20px 20px 0px;
-  --shadow-subtle-3: rgb(255, 255, 255) 0px 0px 0px 3px, rgb(0, 0, 0) 0px 0px 0px 4px;
-
-  /* Surfaces */
-  --surface-canvas: #ffffff;
-  --surface-paper: #f5f5f5;
-  --surface-card: #ffffff;
-  --surface-tinted-accent: #dcfce7;
-}
+# App Design — PS3 Train Condition Monitoring App
+
+> Status: **in progress.** `app/` is being built against this doc; it's updated as decisions
+> change rather than being a frozen pre-build spec.
+>
+> **Auth is currently deferred** (see Section 7.0) — there is no Login/Register/Profile page and
+> no per-user identity anywhere in the app right now. The home page (`/`) goes straight to the
+> Predict page, and Predict/History/Dashboard are open to anyone who can reach the app. Supabase
+> is still used for its Postgres database and Storage buckets (history + file persistence); only
+> its Auth product is unused for now. Re-introducing login is a scoped addition later, not a
+> rewrite — see Section 7.0 for what comes back and where.
+>
+> Visual style references (already chosen), three files each covering a different slice of the
+> UI: [`DESIGN_FORM_MAIN.md`](DESIGN_FORM_MAIN.md) (Typeform) for page headers, the "how to use
+> this app" explanation, and the upload/download controls; [`DESIGN_FORM_ELEMENTS.md`](DESIGN_FORM_ELEMENTS.md)
+> (Buddy) for the subsystem-selection control, whose component vocabulary can also be reused on
+> the dashboard page where it fits better than the alternative; and
+> [`DESIGN_DASHBOARD.md`](DESIGN_DASHBOARD.md) (Dub) for the history/table page. This document
+> covers the functional design: pages, data model, storage, and API — not visual styling, which
+> the three style docs already own.
+
+## 1. Purpose & Scope
+
+A single web app, submitted once at the team-root level (per spec Section 4.1 item 3 /
+"Submission folder structure"), that lets a **non-technical user**:
+
+1. Land on the Predict page immediately (it's the home page — no login screen in front of it).
+2. Pick one of the 4 subsystems (Door, ACV, Rail Corrugation, SHM).
+3. Upload (or drag-and-drop) the held-out test file(s) for that subsystem.
+4. Get predictions back on screen, download them as CSV, and see a dashboard visualising the
+   result.
+5. Look back at past runs in a history table.
+
+This app is also literally how the team produces `predictions.zip` (item 2) — running the
+organiser-distributed held-out test files through it — so its output CSV schema must exactly
+match Section 4.1's table, per subsystem.
+
+### Non-goals for v1
+- No admin/moderation tooling.
+- No retraining or model-management UI — models are fixed artifacts the backend loads.
+- No real-time streaming ingestion — uploads are finite files, processed once per submission.
+- No login/accounts for now — deferred (Section 7.0); everyone using the app shares one history.
+
+## 2. Tech Stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Frontend | React (Vite) + Axios | Requested. Vite for fast dev server / simple build. |
+| Backend | FastAPI (Python) | Requested. Also the natural home for the model inference code (same language as the notebooks in `Optional_Items/*/code`). |
+| Database + File storage | **Supabase** (free tier) | One free service covers both needs below (Section 3) instead of stitching together separate providers — least moving parts for a hackathon judge to reproduce/run. Supabase Auth is also part of this project but is unused while auth is deferred (Section 7.0). |
+| ML inference | plain Python functions per subsystem, loaded once at backend startup | See Section 8. |
+
+## 3. Storage & Infrastructure Decision: Supabase
+
+The app needs two things that persist beyond a single request: **structured history/prediction
+data** (for the history table and dashboards) and **uploaded/output files** (the raw input file +
+the generated `*_predictions.csv`, downloadable later). Supabase's free tier provides both under
+one project:
+
+- **Postgres database** — relational tables for `prediction_jobs` and `prediction_rows`
+  (Section 4).
+- **Storage (object buckets)** — holds the original uploaded file(s) and the generated
+  `*_predictions.csv`, so "download predictions" in the history page is a signed-URL fetch, not
+  re-generating the file.
+
+Free-tier ballpark (verify current limits at project creation, these change over time): ~500MB
+database, ~1GB file storage, project auto-pauses after a week of inactivity (fine for a hackathon
+demo; a request wakes it back up with a short delay). Dataset sizes here are small (largest raw
+file is `Door/Train.csv` at ~1.1MB; individual test files are similarly small), so storage
+headroom is not a concern.
+
+Supabase also offers Auth, which is why it was picked over a plain Postgres+storage host even
+though Auth is unused for now — adding login later (Section 7.0) is turning a feature back on in
+the same project, not introducing a new provider.
+
+**Alternative considered:** Firebase (Auth + Firestore + Storage) is an equally valid free
+one-stop option. Supabase is preferred here because its relational Postgres model maps directly
+onto the history table (one row per job, filterable/sortable by subsystem) without denormalizing
+into a NoSQL shape.
+
+## 4. Data Model (Postgres)
+
+No `profiles` table and no per-user column anywhere — see Section 7.0 for what's deferred and
+what comes back together when login returns.
+
+### `prediction_jobs`
+One row per "run the app once for a subsystem" — i.e. one row per history-table entry.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid, PK | job id |
+| `subsystem` | text | `door` \| `acv` \| `rail_corrugation` \| `shm` |
+| `status` | text | `processing` \| `done` \| `failed` |
+| `input_files` | jsonb | list of `{filename, storage_path, size_bytes}` for each uploaded file |
+| `output_storage_path` | text | path to the generated `*_predictions.csv` in the `predictions` bucket |
+| `summary` | jsonb | small precomputed rollup for the history-row / dashboard header (e.g. door: `{segments: 42, abnormal: 5}`; rail: `{Normal: 60, "Side I": 3, "Side II": 5}`; shm: `{mean: 0.41, max: 0.91}`; acv: `{top_car: "03"}`) |
+| `error_message` | text, nullable | populated if `status = failed` |
+| `created_at` | timestamptz | |
+
+### `prediction_rows`
+The parsed, queryable form of the output CSV — one row per **prediction record** (not per raw
+CSV line), so the dashboard can query/aggregate without re-parsing a CSV file out of storage on
+every view. This is the "store predictions efficiently to load" piece.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigserial, PK | |
+| `job_id` | uuid, FK → `prediction_jobs.id` | |
+| `file_id` | text, nullable | source filename (null for Door — see Section 6) |
+| `start_time` / `end_time` | text, nullable | Door only |
+| `label` | text, nullable | predicted class (Door/Rail) |
+| `ranked_cars` | text, nullable | ACV only, `\|`-joined |
+| `value` | double precision, nullable | SHM's numeric prediction |
+
+Rationale for one wide-ish table over 4 subsystem-specific tables: the history/dashboard code
+only ever needs "give me the rows for job X," and one table keeps that query and the ORM model
+uncomplicated; the schema stays close to the union of what Section 4.1's four output formats
+actually contain. Unused columns per subsystem are simply null.
+
+The raw uploaded file(s) and the final `*_predictions.csv` are **not** duplicated into Postgres —
+they live in Storage (Section 3) and `prediction_jobs` just points to them, keeping the database
+small and downloads a direct file fetch.
+
+## 5. Storage Bucket Layout
+
+Two buckets:
+- `uploads/{job_id}/<original_filename>` — the file(s) as submitted.
+- `predictions/{job_id}/<subsystem>_predictions.csv` — the exact-schema output file, same one
+  the "download" button serves and the one that goes into `predictions.zip` at submission time.
+
+## 6. Subsystem Upload Contract
+
+This drives the format hint shown on the Predict page once a subsystem is selected, upload
+validation, and how "one upload" maps to "one or more predicted rows."
+
+| Subsystem | Accepted file(s) | Cardinality | Required columns / shape (validated on upload) | Output rows produced |
+|---|---|---|---|---|
+| Door | `.csv` | 1+ files, each an independent continuous stream | 17 columns per **Door_Subsystem_Info_Kit.md** §2.2 (time + motor current/voltage/back-EMF + position/status flags), header row required | Many rows per file — one per detected open/close segment (`start_time`, `end_time`, `prediction`) |
+| ACV | `.xlsx` | 1+ files, each one case | timestamp + car-model/train-number columns, plus per-car `Car <NN> - <parameter>` columns (exact parameter set may vary by file — validated by pattern, not fixed column list) | 1 row per file (`file_id`, `ranked_cars`) |
+| Rail Corrugation | `.csv` | 1+ files, each one 1-second recording | 129 columns (speed + 64 axle-box vibration/shock channel pairs), header row present | 1 row per file (`file_id`, `prediction`) |
+| SHM | `.csv` | 1+ files, each one stress time segment | single column of raw stress readings, no header | 1 row per file (`file_id`, `prediction`) |
+
+**Assumption (flagging per spec Section 3.2's "state your assumption" guidance):** the official
+held-out test set for Door and ACV is a single file each (`Test.csv`, `acv_test_case.xlsx`), but
+the app accepts multiple files per subsystem uniformly, treating every uploaded file
+independently. This keeps the upload UX identical across all 4 subsystems and lets a user
+re-check several candidate files in one session; it doesn't change what a single official-test
+run produces.
+
+The final downloadable `*_predictions.csv` for a job concatenates all rows produced by all files
+in that job, in the exact column schema from Section 4.1's table — so running the actual
+organiser-distributed test file(s) through the app and downloading the result is submission-ready
+as-is.
+
+## 7. Pages
+
+### 7.0 Auth pages (Login / Register / Profile) — deferred
+
+**Removed for now, not just unstyled.** There's no Login/Register/Profile page, no
+`AuthContext`/`ProtectedRoute`, and no Supabase JS client in the frontend; the backend has no
+auth dependency at all — every request runs unauthenticated. The home page (`/`) is the Predict
+page directly. This was a deliberate scope cut to focus on Predict/Dashboard/History first,
+rather than a "not implemented yet" gap in those pages.
+
+When login comes back, it's additive rather than a rewrite:
+- Frontend: re-add `LoginPage`/`RegisterPage`/`ProfilePage`, an `AuthContext` wrapping the
+  Supabase JS client, and a `ProtectedRoute` guard — the previous implementation (email/password
+  via Supabase Auth, JWT held client-side) is the reference to rebuild from.
+  Minimal, per the user's "just for user functionality" scope — login/register are thin wrappers
+  around the Supabase Auth JS client (email + password); profile shows/edits a display name and
+  logs out. Not styled in depth — reuse the same base component library as the rest of the app,
+  no dedicated design pass needed.
+- Backend: re-add a `profiles` table (`id` = `auth.users.id`, `display_name`, `created_at`), a
+  `user_id` FK back on `prediction_jobs`, an auth dependency that verifies the Supabase JWT
+  (`Authorization: Bearer <token>`) and resolves it to a user, and apply that dependency to
+  `predict`/`jobs`/`history`.
+- History (Section 7.3) gets its "Run by" column back once `user_id` exists to join against.
+
+### 7.1 Main Prediction Page (`/`, the home page)
+Styled per a split of the two form-oriented references: [`DESIGN_FORM_MAIN.md`](DESIGN_FORM_MAIN.md)
+(Typeform) for the page header, the usage blurb, and the upload/download controls;
+[`DESIGN_FORM_ELEMENTS.md`](DESIGN_FORM_ELEMENTS.md) (Buddy) specifically for the subsystem
+selector control.
+
+1. Short usage blurb at the top ("select a subsystem → upload your file(s) in the shown format →
+   get predictions") — `DESIGN_FORM_MAIN.md` styling.
+2. Subsystem selector (4 options: Door / ACV / Rail Corrugation / SHM) — `DESIGN_FORM_ELEMENTS.md`
+   styling.
+3. Once a subsystem is picked, a format panel appears showing that subsystem's required format
+   (from the table in Section 6 — file type, one-line schema description, and a link/expand to
+   see the full column list), so the user knows what to upload before they try.
+4. Drag-and-drop + click-to-browse upload zone, accepting the file type(s) from Section 6,
+   multiple files allowed.
+5. Submit → calls the backend (Section 9), shows a loading state, then on success:
+   - a "Download predictions.csv" button,
+   - a "View dashboard" button/link to that job's dashboard (Section 7.2),
+   - a compact inline preview of the result (first N rows or the `summary` rollup).
+6. Client-side validation before submit: right extension(s) for the selected subsystem, and a
+   friendly error if the backend rejects a file's shape (e.g. wrong column count) rather than a
+   raw stack trace.
+
+### 7.2 Dashboard / Visualisation Page (`/jobs/:jobId`)
+Styled per [`DESIGN_FORM_ELEMENTS.md`](DESIGN_FORM_ELEMENTS.md) (Buddy) — its component
+vocabulary (cards, tags/pills, accent-colour usage) is reused here rather than the Dub reference,
+which is now reserved for the History page (Section 7.3). The page header (subsystem, run date,
+uploader, download button) reuses `DESIGN_FORM_MAIN.md`'s header/button treatment for consistency
+with the Predict page. One dashboard per prediction job, reached either straight after a
+prediction run or via the History page. Layout differs by subsystem (kept intentionally simple
+for v1, per the user's own note — richer visuals are a later iteration):
+
+| Subsystem | v1 dashboard content |
+|---|---|
+| Door | Horizontal timeline of detected segments coloured by label (Normal vs Abnormal resistance) across the stream; a normal-vs-abnormal count tile; a table of segments. |
+| ACV | Bar chart of cars ranked by fault likelihood (most-likely first), top car called out; one bar chart per uploaded case file. |
+| Rail Corrugation | Class-distribution bar chart (Normal / Side I / Side II counts across uploaded files); a table of per-file predictions. |
+| SHM | Bar chart of predicted cumulative damage per file, sorted descending, with a reference line at damage = 1.0 (Miner's-rule failure threshold, see Info Kit §1.3.1); a table of per-file values. |
+
+Every dashboard shares a header (subsystem, run date, uploader, download button) and a table of
+the raw prediction rows underneath the chart — the chart is the "at a glance" layer, the table is
+the "check the actual numbers" layer.
+
+### 7.3 History Page (`/history`)
+Styled per [`DESIGN_DASHBOARD.md`](DESIGN_DASHBOARD.md) (Dub, table-heavy, matches that
+reference's "Dashboard Table Row" component). One row per `prediction_jobs` entry, columns:
+
+`Subsystem | Date | Status | Download | Dashboard →`
+
+Every run is visible to everyone using the app — there's no per-user scoping since there's no
+login (Section 7.0). A "Run by" column returns once `user_id` exists to populate it. Sortable/
+filterable by subsystem at minimum for v1.
+
+## 8. Model Integration
+
+Backend exposes one Python function per subsystem behind a common interface, e.g.
+`predict(files: list[UploadedFile]) -> PredictionResult` (a small dataclass: list of row dicts
+matching Section 4's `prediction_rows` shape + the `summary` rollup for `prediction_jobs`). This
+lets the API/DB/frontend layers be built and tested against all 4 subsystems today, independent
+of how far along each subsystem's model is:
+
+| Subsystem | Model status | Plan |
+|---|---|---|
+| SHM | **Done** — `Optional_Items/SHM/model/shm_model.joblib` (gradient-boosted regressor + rainflow-count features + fixed `feature_cols` list, per `Optional_Items/SHM/code/shm.ipynb`) | Load the joblib at backend startup; wrap its existing feature-extraction function to run on uploaded files. |
+| Door | Not yet built | Stub returns a placeholder single "unclassified" segment per file until the real segmentation+classification model lands, so the app pipeline is testable end-to-end now. |
+| ACV | Not yet built | Stub returns cars in file-column order (unranked) as a placeholder. |
+| Rail Corrugation | Not yet built | Stub returns `"Normal"` for every file as a placeholder. |
+
+This keeps "build the app" and "finish the other 3 models" as independent workstreams — swapping
+a stub for a real model later is a one-file change in `backend/models/<subsystem>.py` with no
+API/DB/frontend impact.
+
+## 9. Backend API
+
+No auth on any route right now (Section 7.0) — all of these are open.
+
+| Method & path | Purpose |
+|---|---|
+| `GET /api/subsystems` | Returns the Section 6 contract (accepted extension(s), schema summary) for all 4 subsystems, so the frontend's format panel has a single source of truth instead of hardcoding it twice. |
+| `POST /api/predict/{subsystem}` | Multipart upload of 1+ files. Runs that subsystem's `predict()` (Section 8) synchronously (files are small enough that this doesn't need a background job queue for v1), persists the job + rows + files, returns the created `prediction_jobs` row plus its rows/summary. |
+| `GET /api/jobs/{job_id}` | Full job detail (summary + all prediction rows) — powers the dashboard page. |
+| `GET /api/jobs/{job_id}/download` | Streams/redirects to the stored `*_predictions.csv` for that job. |
+| `GET /api/history` | List of all `prediction_jobs`, newest first — powers the History page. |
+
+## 10. `app/` Folder Structure
+
+```
+app/
+├── frontend/                      # React + Vite
+│   └── src/
+│       ├── pages/                 # Predict (home page), Dashboard, History
+│       ├── components/            # SubsystemSelector, FileDropzone, FormatPanel, ResultsTable, charts/
+│       ├── lib/                   # apiClient (axios), downloadJob
+│       └── ...
+└── backend/                       # FastAPI
+    ├── main.py
+    ├── routers/                   # subsystems.py, predict.py, jobs.py, history.py
+    ├── ml/                        # door.py, acv.py, rail_corrugation.py, shm.py — predict() per Section 8
+    ├── ml_artifacts/              # shm_model.joblib (copied from Optional_Items/SHM/model)
+    ├── storage.py                 # Supabase Storage client wrapper
+    ├── db.py                      # Supabase Postgres connection / ORM models (Section 4)
+    └── requirements.txt
 ```
 
-### Tailwind v4
+No `auth.py`, no `profile.py` router, no Login/Register/Profile pages, no `AuthContext`/
+`ProtectedRoute`/`supabaseClient` — see Section 7.0 for what comes back and where.
 
-```css
-@theme {
-  /* Colors */
-  --color-canvas-white: #ffffff;
-  --color-paper-mist: #f5f5f5;
-  --color-ash: #e5e5e5;
-  --color-smoke: #d4d4d4;
-  --color-pebble: #c8c8c8;
-  --color-midnight-ink: #0a0a0a;
-  --color-charcoal: #171717;
-  --color-graphite: #262626;
-  --color-slate: #404040;
-  --color-steel: #525252;
-  --color-fog: #737373;
-  --color-silver: #a3a3a3;
-  --color-electric-blue: #2563eb;
-  --color-deep-sapphire: #1e40af;
-  --color-soft-mint: #dcfce7;
-  --color-vivid-green: #16a34a;
-  --color-tangerine: #ea580c;
-  --color-lavender: #7c3aed;
-  --color-conic-spectrum: #8b5cf6;
-  --color-primary-action-fill: #000000;
+## 11. Open Points
 
-  /* Typography */
-  --font-satoshi: 'Satoshi', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  /* Typography — Scale */
-  --text-caption: 11px;
-  --leading-caption: 1.5;
-  --text-body: 14px;
-  --leading-body: 1.43;
-  --text-body-lg: 16px;
-  --leading-body-lg: 1.5;
-  --text-body-xl: 18px;
-  --leading-body-xl: 1.56;
-  --text-subheading: 20px;
-  --leading-subheading: 1.4;
-  --text-heading-sm: 24px;
-  --leading-heading-sm: 1.33;
-  --text-heading: 30px;
-  --leading-heading: 1.38;
-  --text-heading-lg: 36px;
-  --leading-heading-lg: 1.11;
-  --text-display: 48px;
-  --leading-display: 1;
-
-  /* Spacing */
-  --spacing-4: 4px;
-  --spacing-8: 8px;
-  --spacing-12: 12px;
-  --spacing-16: 16px;
-  --spacing-20: 20px;
-  --spacing-24: 24px;
-  --spacing-28: 28px;
-  --spacing-32: 32px;
-  --spacing-36: 36px;
-  --spacing-40: 40px;
-  --spacing-48: 48px;
-  --spacing-56: 56px;
-  --spacing-64: 64px;
-  --spacing-80: 80px;
-  --spacing-96: 96px;
-  --spacing-112: 112px;
-
-  /* Border Radius */
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-2xl-2: 20px;
-  --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-subtle: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
-  --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
-  --shadow-sm-2: rgba(0, 0, 0, 0.2) 0px 2px 6px 0px inset;
-  --shadow-subtle-2: rgba(0, 0, 0, 0.1) 0px 0px 0px 4px;
-  --shadow-md: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1) 0px 4px 6px -4px;
-  --shadow-lg: rgba(0, 0, 0, 0.09) 0px 20px 20px 0px;
-  --shadow-subtle-3: rgb(255, 255, 255) 0px 0px 0px 3px, rgb(0, 0, 0) 0px 0px 0px 4px;
-}
-```
+1. **Supabase project**: needs a Supabase account/project created (free tier) with its URL +
+   service-role key + database connection string supplied to the backend via `.env`
+   (`app/backend/schema.sql` creates the tables; the Storage tab needs `uploads` and
+   `predictions` buckets created manually).
+2. **Auth timing** (Section 7.0): deferred by explicit request to focus on Predict/Dashboard/
+   History first — revisit once those are solid.
+3. **Multi-file upload per subsystem** (Section 6's assumption) — confirm this is desired UX
+   versus restricting to exactly the official cardinality per subsystem.
+4. **Synchronous inference** (Section 9) — fine while files stay small; would need a job
+   queue/polling if that changes.
+5. Door/ACV/Rail Corrugation model stubs (Section 8) — confirm it's fine for the app to ship
+   against placeholder logic for those three until their models are ready, versus waiting.

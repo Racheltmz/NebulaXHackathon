@@ -1,0 +1,56 @@
+/* Design tokens condensed from the three style references in docs/ — namespaced by which part
+   of the UI they drive (docs/DESIGN.md Section 7 assigns each page/component to one of them).
+   Font substitutes used here match what each reference doc lists as its own substitute.
+   Typography app-wide uses form-elements' font (IBM Plex Sans, --fe-font) rather than
+   form-main's — form-main's tokens here are colors/radii only. */
+
+:root {
+  /* ---- form-main: DESIGN_FORM_MAIN.md (Typeform) — headers, usage blurb, upload/download ---- */
+  --fm-ink: #2a222b;
+  --fm-plum: #3e3040;
+  --fm-violet: #9454ab;
+  --fm-cream: #faf9fb;
+  --fm-white: #ffffff;
+  --fm-ash: #655d67;
+  --fm-mist: #d4d1d5;
+  --fm-parchment: #f5f3f6;
+  --fm-radius-button: 12px;
+  --fm-radius-card: 24px;
+
+  /* ---- form-elements: DESIGN_FORM_ELEMENTS.md (Buddy) — subsystem selector, dashboard components ---- */
+  --fe-lime: #bfff5a;
+  --fe-cobalt: #1a67fd;
+  --fe-forest: #0b3d28;
+  --fe-paper: #fcfcfd;
+  --fe-ink: #1d2130;
+  --fe-carbon: #151720;
+  --fe-mist: #ebeef7;
+  --fe-edge: #d5d9e8;
+  --fe-pewter: #6b6d72;
+  --fe-mint-tint: #d8fbed;
+  --fe-font: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --fe-radius-pill: 56px;
+  --fe-radius-card: 24px;
+  --fe-radius-inner: 14px;
+
+  /* ---- dashboard: DESIGN_DASHBOARD.md (Dub) — history/table page ---- */
+  --db-canvas: #ffffff;
+  --db-paper: #f5f5f5;
+  --db-border: #e5e5e5;
+  --db-ink: #171717;
+  --db-muted: #737373;
+  --db-accent: #2563eb;
+  --db-mint: #dcfce7;
+  --db-font: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --db-radius-card: 12px;
+  --db-radius-pill: 9999px;
+  --db-radius-button: 8px;
+
+  /* shared status colors, used consistently across all three surfaces */
+  --status-normal: #16a34a;
+  --status-abnormal: #dc2626;
+  --status-pending: #ea580c;
+
+  /* shared accent — selection highlight (subsystem cards) and the Predict-page hero art */
+  --accent-navy: #002f6c;
+}

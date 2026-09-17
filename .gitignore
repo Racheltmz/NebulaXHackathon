@@ -1,11 +1,15 @@
 # Python
-backend/.venv/
+.venv/
 __pycache__/
 *.pyc
 
 # Node
-app/node_modules/
-app/dist/
+node_modules/
+dist/
 
 # OS
 .DS_Store
+
+# Environment variables
+.env
+.venv/
