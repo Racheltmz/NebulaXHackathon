@@ -65,7 +65,10 @@ def _get_session_factory():
                 "connection string to app/backend/.env before using any endpoint that touches "
                 "the database.",
             )
-        _engine = create_engine(config.DATABASE_URL, pool_pre_ping=True)
+        # pool_recycle (not pool_pre_ping) keeps connections fresh here — pre_ping adds a round
+        # trip to the DB on every checkout, which is expensive given the Supabase pooler's
+        # cross-region latency; recycling stale connections periodically avoids that cost.
+        _engine = create_engine(config.DATABASE_URL, pool_recycle=300)
         _SessionLocal = sessionmaker(bind=_engine, autoflush=False, autocommit=False)
     return _SessionLocal
 

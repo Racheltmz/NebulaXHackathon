@@ -3,18 +3,29 @@ import { Link } from "react-router-dom";
 
 import FileDropzone from "../components/FileDropzone";
 import FormatPanel from "../components/FormatPanel";
-import ResultsTable from "../components/ResultsTable";
 import SubsystemSelector from "../components/SubsystemSelector";
 import apiClient from "../lib/apiClient";
-import { downloadJobCsv } from "../lib/downloadJob";
+
+/** One-line result for a finished run — a run is one file, so this is its single prediction
+ * (or, for Door, a count of the segments found in that stream). */
+function summarizeRun(subsystem, rows) {
+  if (subsystem === "door") {
+    const abnormal = rows.filter((r) => r.label === "Abnormal resistance").length;
+    return `${rows.length} segment(s), ${abnormal} abnormal`;
+  }
+  const row = rows[0];
+  if (!row) return "—";
+  if (subsystem === "acv") return row.ranked_cars;
+  if (subsystem === "shm") return row.value?.toFixed?.(4) ?? String(row.value);
+  return row.label;
+}
 
 export default function PredictPage() {
   const [subsystems, setSubsystems] = useState([]);
   const [selectedKey, setSelectedKey] = useState(null);
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
+  const [runs, setRuns] = useState([]); // one entry per uploaded file: { name, status, jobId, rows, error }
   const [subsystemsError, setSubsystemsError] = useState(null);
 
   useEffect(() => {
@@ -37,29 +48,35 @@ export default function PredictPage() {
   const handleSelect = (key) => {
     setSelectedKey(key);
     setFiles([]);
-    setResult(null);
-    setError(null);
+    setRuns([]);
   };
 
+  const updateRun = (index, patch) =>
+    setRuns((prev) => prev.map((run, i) => (i === index ? { ...run, ...patch } : run)));
+
+  // One request per file so each file is its own run in History (and a bad file doesn't sink the
+  // rest). Sequential rather than parallel to keep the backend's memory use flat on big batches.
   const handleSubmit = async () => {
     if (!selected || files.length === 0) return;
+    const batch = files;
     setSubmitting(true);
-    setError(null);
-    setResult(null);
+    setRuns(batch.map((f) => ({ name: f.name, status: "pending" })));
+    setFiles([]);
 
-    const formData = new FormData();
-    files.forEach((f) => formData.append("files", f));
-
-    try {
-      const res = await apiClient.post(`/api/predict/${selected.key}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setResult(res.data);
-    } catch (err) {
-      setError(err.response?.data?.detail || err.message);
-    } finally {
-      setSubmitting(false);
+    for (let i = 0; i < batch.length; i++) {
+      updateRun(i, { status: "running" });
+      const formData = new FormData();
+      formData.append("file", batch[i]);
+      try {
+        const res = await apiClient.post(`/api/predict/${selected.key}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        updateRun(i, { status: "done", jobId: res.data.job_id, rows: res.data.rows });
+      } catch (err) {
+        updateRun(i, { status: "failed", error: err.response?.data?.detail || err.message });
+      }
     }
+    setSubmitting(false);
   };
 
   return (
@@ -73,28 +90,52 @@ export default function PredictPage() {
           <FileDropzone accept={selected.accepted_extensions} files={files} onFilesChange={setFiles} />
         )}
 
-        {error && <div className="error-banner">{error}</div>}
-
         <button
           className="btn-primary"
           type="button"
           onClick={handleSubmit}
           disabled={!selected || files.length === 0 || submitting}
         >
-          {submitting ? "Running prediction…" : "Run prediction"}
+          {submitting ? "Running predictions…" : files.length > 1 ? `Run ${files.length} predictions` : "Run prediction"}
         </button>
 
-        {result && (
+        {runs.length > 0 && (
           <div className="result-panel">
-            <div className="result-actions">
-              <button className="btn-secondary" type="button" onClick={() => downloadJobCsv(result.job_id, selected.key)}>
-                Download predictions.csv
-              </button>
-              <Link className="btn-lime" to={`/jobs/${result.job_id}`}>
-                View dashboard
-              </Link>
-            </div>
-            <ResultsTable subsystem={selected.key} rows={result.rows} />
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Status</th>
+                  <th>Result</th>
+                  <th>Dashboard</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runs.map((run, i) => (
+                  <tr key={i}>
+                    <td>{run.name}</td>
+                    <td>
+                      <span className={`badge ${run.status === "done" ? "normal" : run.status === "failed" ? "abnormal" : ""}`}>
+                        {run.status}
+                      </span>
+                    </td>
+                    <td>{run.status === "done" ? summarizeRun(selected.key, run.rows) : run.error ?? "—"}</td>
+                    <td>
+                      {run.jobId ? (
+                        <Link className="link-button" to={`/jobs/${run.jobId}`}>
+                          View →
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="preview-truncated-note">
+              Each file is saved as its own run. Download predictions from the History page.
+            </p>
           </div>
         )}
       </div>

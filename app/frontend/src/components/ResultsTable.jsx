@@ -1,4 +1,4 @@
-function StatusBadge({ label }) {
+export function StatusBadge({ label }) {
   const cls = label === "Abnormal resistance" ? "abnormal" : label === "Side I" ? "side1" : label === "Side II" ? "side2" : "normal";
   return <span className={`badge ${cls}`}>{label}</span>;
 }

@@ -33,3 +33,7 @@ def upload_file(bucket: str, path: str, content: bytes, content_type: str = "app
 def create_signed_url(bucket: str, path: str, expires_in_seconds: int = 3600) -> str:
     result = get_client().storage.from_(bucket).create_signed_url(path, expires_in_seconds)
     return result["signedURL"] if "signedURL" in result else result["signedUrl"]
+
+
+def download_file(bucket: str, path: str) -> bytes:
+    return get_client().storage.from_(bucket).download(path)

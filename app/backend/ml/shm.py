@@ -41,6 +41,24 @@ def _load_signal(content: bytes) -> np.ndarray:
     return np.loadtxt(io.BytesIO(content), dtype=np.float64)
 
 
+def validate(files: list[UploadedFile]) -> None:
+    for f in files:
+        try:
+            signal = _load_signal(f.content)
+        except Exception as exc:  # noqa: BLE001 — surfaced verbatim as the validation error
+            raise ValueError(
+                f"'{f.filename}' could not be parsed as a single column of raw numeric "
+                f"readings with no header row: {exc}"
+            ) from exc
+        if signal.ndim != 1:
+            raise ValueError(
+                f"'{f.filename}' must contain exactly one column of readings, got shape "
+                f"{signal.shape}."
+            )
+        if signal.size == 0:
+            raise ValueError(f"'{f.filename}' is empty.")
+
+
 def _weighted_std(values: np.ndarray, weights: np.ndarray) -> float:
     avg = np.average(values, weights=weights)
     var = np.average((values - avg) ** 2, weights=weights)

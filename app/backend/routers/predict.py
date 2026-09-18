@@ -17,30 +17,32 @@ router = APIRouter(prefix="/api/predict", tags=["predict"])
 @router.post("/{subsystem_key}")
 async def run_prediction(
     subsystem_key: str,
-    files: list[UploadFile] = File(...),
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
+    """One upload = one run: every file becomes its own `prediction_jobs` row so it shows up as
+    a separate entry in History. The frontend sends a multi-file selection as one request per file.
+    """
     try:
         subsystem = get_subsystem(subsystem_key)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    if not files:
-        raise HTTPException(status_code=400, detail="No files uploaded")
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in subsystem.accepted_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"'{file.filename}' has an unsupported extension for {subsystem.label} — "
+                f"expected one of {subsystem.accepted_extensions}."
+            ),
+        )
+    uploaded = [UploadedFile(filename=file.filename, content=await file.read())]
 
-    uploaded: list[UploadedFile] = []
-    for f in files:
-        ext = os.path.splitext(f.filename or "")[1].lower()
-        if ext not in subsystem.accepted_extensions:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"'{f.filename}' has an unsupported extension for {subsystem.label} — "
-                    f"expected one of {subsystem.accepted_extensions}."
-                ),
-            )
-        content = await f.read()
-        uploaded.append(UploadedFile(filename=f.filename, content=content))
+    try:
+        subsystem.validate_fn(uploaded)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     try:
         result = subsystem.predict_fn(uploaded)

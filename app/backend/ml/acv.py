@@ -16,6 +16,19 @@ from .common import PredictionResult, UploadedFile
 CAR_COLUMN_RE = re.compile(r"Car\s*(\d+)\s*-")
 
 
+def validate(files: list[UploadedFile]) -> None:
+    for f in files:
+        try:
+            df = pd.read_excel(io.BytesIO(f.content), nrows=1)
+        except Exception as exc:  # noqa: BLE001 — surfaced verbatim as the validation error
+            raise ValueError(f"'{f.filename}' could not be read as an Excel (.xlsx) file: {exc}") from exc
+        if not any(CAR_COLUMN_RE.search(str(col)) for col in df.columns):
+            raise ValueError(
+                f"'{f.filename}' has no columns matching 'Car <NN> - <parameter>' — expected "
+                "per-car readings alongside car model, train number, and time columns."
+            )
+
+
 def predict(files: list[UploadedFile]) -> PredictionResult:
     rows = []
     top_cars = []

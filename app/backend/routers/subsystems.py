@@ -1,5 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from db import PredictionJob, PredictionRow, get_db
 from ml.subsystems import SUBSYSTEMS
 from schemas import SubsystemInfo
 
@@ -18,3 +20,17 @@ def list_subsystems():
         )
         for s in SUBSYSTEMS.values()
     ]
+
+
+@router.get("/shm/damage-distribution")
+def shm_damage_distribution(db: Session = Depends(get_db)):
+    """Every predicted cumulative-damage value ever recorded for SHM, across all runs — lets the
+    dashboard show where one run's value sits relative to everything else the app has predicted.
+    """
+    rows = (
+        db.query(PredictionRow.value)
+        .join(PredictionJob, PredictionJob.id == PredictionRow.job_id)
+        .filter(PredictionJob.subsystem == "shm", PredictionRow.value.isnot(None))
+        .all()
+    )
+    return {"values": [r[0] for r in rows]}
