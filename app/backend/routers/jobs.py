@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 import config
 import storage
 from db import PredictionJob, PredictionRow, get_db
+from ml.common import preview_table
 from ml.export import rows_to_csv_bytes
 from schemas import InputFileInfo, JobDetailOut, PredictionRowOut
 
@@ -16,6 +17,18 @@ def _get_job_or_404(db: Session, job_id: str) -> PredictionJob:
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+
+def _get_input_file_or_404(job: PredictionJob, index: int) -> dict:
+    if index < 0 or index >= len(job.input_files):
+        raise HTTPException(status_code=404, detail="Input file not found")
+    meta = job.input_files[index]
+    if not meta.get("storage_path"):
+        raise HTTPException(
+            status_code=404,
+            detail=f"'{meta['filename']}' was not saved to storage for this run.",
+        )
+    return meta
 
 
 @router.get("/{job_id}", response_model=JobDetailOut)
@@ -42,6 +55,36 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
             for r in rows
         ],
     )
+
+
+@router.get("/{job_id}/input-files/{index}/preview")
+def preview_input_file(job_id: str, index: int, db: Session = Depends(get_db)):
+    job = _get_job_or_404(db, job_id)
+    meta = _get_input_file_or_404(job, index)
+
+    try:
+        content = storage.download_file(config.UPLOADS_BUCKET, meta["storage_path"])
+    except Exception as exc:  # noqa: BLE001 — missing creds, missing bucket, etc.
+        raise HTTPException(status_code=502, detail=f"Could not fetch file for preview: {exc}") from exc
+
+    try:
+        preview = preview_table(meta["filename"], content, job.subsystem)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return {"filename": meta["filename"], **preview}
+
+
+@router.get("/{job_id}/input-files/{index}/download")
+def download_input_file(job_id: str, index: int, db: Session = Depends(get_db)):
+    job = _get_job_or_404(db, job_id)
+    meta = _get_input_file_or_404(job, index)
+
+    try:
+        url = storage.create_signed_url(config.UPLOADS_BUCKET, meta["storage_path"])
+    except Exception as exc:  # noqa: BLE001 — missing creds, missing bucket, etc.
+        raise HTTPException(status_code=502, detail=f"Could not generate download link: {exc}") from exc
+    return RedirectResponse(url)
 
 
 @router.get("/{job_id}/download")

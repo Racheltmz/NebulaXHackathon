@@ -16,6 +16,23 @@ import pandas as pd
 
 from .common import PredictionResult, UploadedFile
 
+EXPECTED_COLUMNS = 17
+
+
+def validate(files: list[UploadedFile]) -> None:
+    for f in files:
+        try:
+            header = pd.read_csv(io.BytesIO(f.content), nrows=0)
+        except Exception as exc:  # noqa: BLE001 — surfaced verbatim as the validation error
+            raise ValueError(f"'{f.filename}' could not be read as CSV: {exc}") from exc
+        if len(header.columns) != EXPECTED_COLUMNS:
+            raise ValueError(
+                f"'{f.filename}' has {len(header.columns)} columns, expected {EXPECTED_COLUMNS} "
+                "(Datetime, motor current/voltage/back-EMF, door opening/closing time, "
+                "close/open command, DCSR, DCSL, DLSR, DLSL, door opened/locked, door is "
+                "opening/closing, door leaf position)."
+            )
+
 
 def predict(files: list[UploadedFile]) -> PredictionResult:
     rows = []

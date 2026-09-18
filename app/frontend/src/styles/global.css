@@ -137,8 +137,8 @@ body {
 }
 
 .btn-lime {
-  background: var(--fe-lime);
-  color: var(--fe-forest);
+  background: var(--db-accent-tint);
+  color: var(--db-accent);
   border: none;
   border-radius: var(--radius-md);
   padding: 10px 24px;
@@ -189,6 +189,58 @@ body {
   margin: 4px 0 0;
   font-size: 14px;
   color: var(--fm-ink);
+}
+
+/* ---------- Info page subsystem overview cards — same icon/tint language as the Predict
+   page's subsystem-card picker below, just sized up into standalone description cards. ---------- */
+.subsystem-info-heading {
+  font-family: var(--fe-font);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--fe-ink);
+  margin: 32px 0 12px;
+}
+
+.subsystem-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.subsystem-info-card {
+  font-family: var(--fe-font);
+  background: var(--fe-paper);
+  border: 1px solid var(--fe-edge);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subsystem-info-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.subsystem-info-card h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--fe-ink);
+}
+
+.subsystem-info-card p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--fe-pewter);
+  line-height: 1.6;
 }
 
 /* ---------- Subsystem selector (form-elements / Buddy) — tool-picker card grid, modeled on
@@ -362,6 +414,10 @@ body {
 }
 
 /* ---------- Dashboard page (form-elements components) ---------- */
+.dashboard-page-wide {
+  max-width: none;
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -417,12 +473,127 @@ body {
   margin-bottom: 24px;
 }
 
+.chart-card-header {
+  margin: 0px;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0px;
+}
+
+/* Tinted rounded tile behind a line icon — same look as the subsystem selector's icon tiles. */
+.icon-tile {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.icon-tile svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+}
+
+/* ---------- SHM dashboard — hero stats row, then histogram (wide) beside the severity countplot ---------- */
+.shm-chart-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 720px) {
+  .shm-chart-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shm-hero-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 720px) {
+  .shm-hero-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shm-hero-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.shm-hero-value {
+  font-family: var(--fe-font);
+  font-size: 40px;
+  font-weight: 600;
+  color: var(--fe-ink);
+  line-height: 1.1;
+}
+
+.shm-hero-label {
+  font-size: 14px;
+  color: var(--fe-pewter);
+  margin-top: 4px;
+}
+
+.shm-hero-badge {
+  margin-top: 14px;
+}
+
+.chart-caption {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--fe-pewter);
+}
+
+.explainability-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--fe-pewter);
+  line-height: 1.8;
+}
+
 .bar-chart {
   display: flex;
   align-items: flex-end;
   gap: 12px;
   height: 200px;
   padding-top: 12px;
+}
+
+/* Histogram mode: bins touch, with a hairline between bars so neighbours stay distinguishable. */
+.bar-chart.tight {
+  gap: 0;
+}
+
+.bar-chart.tight .bar-chart-bar {
+  max-width: none;
+  border-radius: 10px 10px 0 0;
+  box-shadow: inset -1px 0 0 var(--fe-paper);
+}
+
+.bar-chart.tight .bar-chart-col {
+  min-width: 0;
+}
+
+/* Bins are narrower than their labels — let a label overflow its column (still centred) instead of
+   wrapping, since a wrapped label pushes its bar off the shared baseline. */
+.bar-chart.tight .bar-chart-label {
+  white-space: nowrap;
+  word-break: normal;
 }
 
 .bar-chart-col {
@@ -514,6 +685,28 @@ body {
   border-bottom: 1px solid var(--db-border);
 }
 
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sort-button:hover,
+.sort-button.active {
+  color: var(--db-ink);
+}
+
+.sort-arrow {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
 .badge {
   display: inline-block;
   padding: 4px 10px;
@@ -533,7 +726,8 @@ body {
 }
 
 .badge.side1,
-.badge.side2 {
+.badge.side2,
+.badge.elevated {
   background: var(--db-warning-tint);
   color: var(--db-warning);
 }
@@ -548,6 +742,37 @@ body {
   font-weight: 500;
   color: var(--db-ink);
   margin-bottom: 4px;
+}
+
+.download-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0 4px;
+  padding: 16px 20px;
+  background: var(--db-paper);
+  border: 1px solid var(--db-border);
+  border-radius: var(--radius-md);
+}
+
+.download-panel > div {
+  flex: 1 1 260px;
+}
+
+.download-panel p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--db-muted);
+}
+
+.download-panel select {
+  padding: 8px 12px;
+  border: 1px solid var(--db-border);
+  border-radius: var(--radius-xs);
+  background: var(--db-canvas);
+  color: var(--db-ink);
+  font-size: 14px;
 }
 
 .history-filters {
@@ -580,6 +805,15 @@ body {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
+.history-dashboard {
+  margin-bottom: 24px;
+}
+
+.history-dashboard-note {
+  color: var(--db-muted);
+  font-size: 14px;
+}
+
 .history-table-card {
   background: var(--db-canvas);
   border: 1px solid var(--db-border);
@@ -594,5 +828,70 @@ body {
   cursor: pointer;
   font-size: 14px;
   padding: 0;
+  text-align: left;
+}
+
+/* ---------- Modal (file/predictions preview) ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
+
+.modal-panel {
+  background: var(--db-canvas);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--db-border);
+  max-width: 720px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--db-border);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--db-ink);
+  word-break: break-word;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--db-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.modal-close:hover {
+  color: var(--db-ink);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow: auto;
+}
+
+.preview-truncated-note {
+  color: var(--db-muted);
+  font-size: 13px;
+  margin-top: 8px;
 }
 

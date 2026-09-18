@@ -18,6 +18,7 @@ class Subsystem:
     schema_hint: str
     output_columns: list[str]
     predict_fn: Callable[[list[UploadedFile]], PredictionResult]
+    validate_fn: Callable[[list[UploadedFile]], None]
 
 
 SUBSYSTEMS: dict[str, Subsystem] = {
@@ -26,35 +27,43 @@ SUBSYSTEMS: dict[str, Subsystem] = {
         label="Door",
         accepted_extensions=[".csv"],
         schema_hint=(
-            "CSV with a header row and 17 columns:"
+            "Each CSV file is one continuous stream containing many open/close cycles back to back, contains a header row and 17 columns:"
             "\nDatetime (Year-Month-Date-Hour-Minute-Second-Millisecond)"
-            "\nmotor current/voltage/back-EMF"
-            "\ndoor opening/closing time"
-            "\nclose/open command"
+            "\nMotor current(mA)"
+            "\nMotor voltage(10mV)"
+            "\nMotor electrodynamic force"
+            "\nDoor opening time(.1s)"
+            "\nDoor closing time(.1s)"
+            "\nClose command"
+            "\nOpen command"
             "\nDCSR"
             "\nDCSL"
             "\nDLSR"
             "\nDLSL"
-            "\ndoor opened/locked"
-            "\ndoor is opening/closing"
-            "\ndoor leaf position"
-            "\nEach file is one continuous stream containing many open/close cycles back to back."
+            "\nDoor Opened"
+            "\nDoor Locked"
+            "\nDoor is opening"
+            "\nDoor is closing"
+            "\nDoor leaf position"
         ),
         output_columns=["start_time", "end_time", "prediction"],
         predict_fn=door.predict,
+        validate_fn=door.validate,
     ),
     "acv": Subsystem(
         key="acv",
         label="ACV",
         accepted_extensions=[".xlsx"],
         schema_hint=(
-            "Excel (.xlsx) file with one row per timestamp: car model, train number, and time, "
-            "plus per-car columns named 'Car <NN> - <parameter>' for each of the 8 cars. The "
-            "exact parameter set can vary between files — car identifiers are read from each "
-            "file's own headers."
+            "Excel (.xlsx) file with one row per timestamp: "
+            "\nCar model"
+            "\nTrain number"
+            "\nTime"
+            "\nPer-car columns named 'Car <NN> - <parameter>' for each of the 8 cars (The exact parameter set can vary between files, car identifiers are read from each file's own headers.)"
         ),
         output_columns=["file_id", "ranked_cars"],
         predict_fn=acv.predict,
+        validate_fn=acv.validate,
     ),
     "rail_corrugation": Subsystem(
         key="rail_corrugation",
@@ -67,6 +76,7 @@ SUBSYSTEMS: dict[str, Subsystem] = {
         ),
         output_columns=["file_id", "prediction"],
         predict_fn=rail_corrugation.predict,
+        validate_fn=rail_corrugation.validate,
     ),
     "shm": Subsystem(
         key="shm",
@@ -78,6 +88,7 @@ SUBSYSTEMS: dict[str, Subsystem] = {
         ),
         output_columns=["file_id", "prediction"],
         predict_fn=shm.predict,
+        validate_fn=shm.validate,
     ),
 }
 
