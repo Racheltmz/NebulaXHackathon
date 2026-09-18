@@ -1,0 +1,40 @@
+# Rendered at container start: the nginx image substitutes ${PORT}, ${BACKEND_HOST} and
+# ${NGINX_LOCAL_RESOLVERS} from the environment (other $variables are nginx's own and are left alone).
+server {
+    listen ${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Uploaded data files pass through here on the way to the backend
+    client_max_body_size 32m;
+
+    location /api/ {
+        # A variable in proxy_pass makes nginx resolve the backend at request time, not just at startup
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=30s ipv6=off;
+        set $backend_host "${BACKEND_HOST}";
+        proxy_pass https://$backend_host;
+        # Cloud Run needs SNI and the backend's own Host header to route the request
+        proxy_ssl_server_name on;
+        proxy_set_header Host $backend_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # React Router paths like /history and /jobs/:id have no file on disk: serve the app shell
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri /index.html;
+    }
+}
