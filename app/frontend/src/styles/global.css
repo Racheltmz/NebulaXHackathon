@@ -6,29 +6,31 @@
 
 body {
   margin: 0;
-  background: var(--db-paper);
-  color: var(--fm-ink);
-  font-family: var(--fe-font);
+  background: var(--db-page);
+  color: var(--db-ink);
+  font-family: var(--db-font);
 }
 
-/* ---------- Dashboard shell (DESIGN_DASHBOARD.md / Dub's Partner Program layout) — a left
-   sidebar + content panel, inset as one rounded card floating on the page's light-gray
-   background, matching the reference screenshot. ---------- */
+/* ---------- Dashboard shell — a left sidebar + content panel floating on the page's soft
+   gray backdrop: white sidebar, light-gray content area, white cards on top of that (see
+   reference screenshot in the design discussion — lighter and airier than the dark navy
+   docs/DESIGN_DASHBOARD.md draft that was tried and rejected). ---------- */
 .dashboard-shell {
   display: flex;
   align-items: stretch;
   min-height: calc(100vh - 32px);
   margin: 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--db-canvas);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 16px 32px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
 }
 
 .sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: var(--db-paper);
+  background: var(--db-canvas);
+  border-right: 1px solid var(--db-border);
   padding: 20px 14px;
   display: flex;
   flex-direction: column;
@@ -36,11 +38,12 @@ body {
 }
 
 .sidebar-brand {
-  font-family: var(--fe-font);
+  font-family: var(--db-font);
   font-weight: 600;
   font-size: 18px;
   letter-spacing: -0.02em;
   padding: 4px 10px;
+  color: var(--db-ink);
 }
 
 .sidebar-nav {
@@ -54,27 +57,29 @@ body {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
-  color: var(--db-ink);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  color: var(--db-muted);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
-  opacity: 0.65;
 }
 
 .sidebar-nav a:hover {
-  opacity: 1;
+  background: var(--db-card-hover);
+  color: var(--db-ink);
 }
 
 .sidebar-nav a.active {
-  background: #dbeaff;
-  opacity: 1;
+  background: var(--db-accent-tint);
+  border-left-color: var(--db-accent);
+  color: var(--db-accent);
 }
 
 .dashboard-content {
   flex: 1;
   min-width: 0;
-  background: var(--db-canvas);
+  background: var(--db-paper);
   overflow-y: auto;
 }
 
@@ -89,7 +94,7 @@ body {
    lavender-cream tint as its own inset panel within the white content area. */
 .form-section {
   background: var(--fm-cream);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   margin: 40px;
 }
 
@@ -108,7 +113,7 @@ body {
   background: var(--fm-ink);
   color: var(--fm-cream);
   border: none;
-  border-radius: var(--fm-radius-button);
+  border-radius: var(--radius-md);
   padding: 10px 24px;
   font-family: var(--fe-font);
   font-size: 15px;
@@ -124,7 +129,7 @@ body {
   background: transparent;
   color: var(--fm-ink);
   border: 1px solid var(--fm-mist);
-  border-radius: var(--fm-radius-button);
+  border-radius: var(--radius-md);
   padding: 10px 24px;
   font-family: var(--fe-font);
   font-size: 15px;
@@ -135,7 +140,7 @@ body {
   background: var(--fe-lime);
   color: var(--fe-forest);
   border: none;
-  border-radius: var(--fe-radius-pill);
+  border-radius: var(--radius-md);
   padding: 10px 24px;
   font-family: var(--fe-font);
   font-weight: 500;
@@ -166,8 +171,9 @@ body {
 }
 
 .usage-step {
-  background: var(--fm-parchment);
-  border-radius: var(--fm-radius-card);
+  background: var(--db-canvas);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--fe-edge);
   padding: 16px 20px;
   flex: 1;
   min-width: 160px;
@@ -201,7 +207,7 @@ body {
   gap: 12px;
   background: var(--fe-paper);
   border: 1px solid var(--fe-edge);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
   font-size: 14px;
   font-weight: 500;
@@ -223,7 +229,7 @@ body {
   flex-shrink: 0;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -233,7 +239,7 @@ body {
 .format-panel {
   background: var(--fe-paper);
   border: 1px solid var(--fe-edge);
-  border-radius: var(--fe-radius-card);
+  border-radius: var(--radius-md);
   padding: 20px 24px;
   margin-bottom: 24px;
   font-family: var(--fe-font);
@@ -268,7 +274,7 @@ body {
   display: inline-block;
   background: var(--fe-mint-tint);
   color: var(--fe-forest);
-  border-radius: var(--fe-radius-pill);
+  border-radius: var(--radius-pill);
   padding: 2px 10px;
   font-size: 12px;
   margin-left: 8px;
@@ -277,7 +283,7 @@ body {
 /* ---------- File dropzone (form-main upload control) ---------- */
 .dropzone {
   border: 2px dashed var(--fm-mist);
-  border-radius: var(--fm-radius-card);
+  border-radius: var(--radius-md);
   padding: 40px 24px;
   text-align: center;
   color: var(--fm-ash);
@@ -310,7 +316,7 @@ body {
   font-size: 14px;
   padding: 8px 12px;
   background: var(--fm-parchment);
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
 }
 
 .file-list button {
@@ -326,7 +332,7 @@ body {
   margin-top: 24px;
   background: var(--fm-white);
   border: 1px solid var(--fm-mist);
-  border-radius: var(--fm-radius-card);
+  border-radius: var(--radius-md);
   padding: 24px;
 }
 
@@ -340,7 +346,7 @@ body {
 .error-banner {
   background: #fdecec;
   color: #a3262c;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -348,7 +354,7 @@ body {
 
 .setup-notice {
   background: var(--fm-parchment);
-  border-radius: var(--fm-radius-card);
+  border-radius: var(--radius-md);
   padding: 20px 24px;
   color: var(--fm-ash);
   font-size: 14px;
@@ -386,7 +392,7 @@ body {
 .stat-tile {
   background: var(--fe-paper);
   border: 1px solid var(--fe-edge);
-  border-radius: var(--fe-radius-card);
+  border-radius: var(--radius-md);
   padding: 16px 20px;
   min-width: 140px;
   font-family: var(--fe-font);
@@ -406,7 +412,7 @@ body {
 .chart-card {
   background: var(--fe-paper);
   border: 1px solid var(--fe-edge);
-  border-radius: var(--fe-radius-card);
+  border-radius: var(--radius-md);
   padding: 24px;
   margin-bottom: 24px;
 }
@@ -453,7 +459,7 @@ body {
   position: relative;
   height: 48px;
   background: var(--fe-mist);
-  border-radius: var(--fe-radius-inner);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -511,28 +517,28 @@ body {
 .badge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: var(--db-radius-pill);
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 500;
 }
 
 .badge.normal {
-  background: var(--db-mint);
-  color: #166534;
+  background: var(--db-positive-tint);
+  color: var(--db-positive);
 }
 
 .badge.abnormal {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--db-negative-tint);
+  color: var(--db-negative);
 }
 
 .badge.side1,
 .badge.side2 {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--db-warning-tint);
+  color: var(--db-warning);
 }
 
-/* ---------- History page (dashboard / Dub) ---------- */
+/* ---------- History page (dashboard) ---------- */
 .history-page {
   font-family: var(--db-font);
 }
@@ -545,30 +551,39 @@ body {
 }
 
 .history-filters {
-  display: flex;
-  gap: 8px;
+  display: inline-flex;
+  gap: 2px;
   margin: 16px 0 20px;
+  padding: 4px;
+  background: var(--db-paper);
+  border: 1px solid var(--db-border);
+  border-radius: var(--radius-md);
 }
 
 .history-filters button {
-  background: var(--db-canvas);
-  border: 1px solid var(--db-border);
-  border-radius: var(--db-radius-button);
+  background: transparent;
+  color: var(--db-muted);
+  border: none;
+  border-radius: var(--radius-xs);
   padding: 6px 14px;
   font-size: 13px;
   cursor: pointer;
 }
 
+.history-filters button:hover {
+  color: var(--db-ink);
+}
+
 .history-filters button.active {
-  background: var(--db-ink);
-  color: white;
-  border-color: var(--db-ink);
+  background: var(--db-canvas);
+  color: var(--db-ink);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
 .history-table-card {
   background: var(--db-canvas);
   border: 1px solid var(--db-border);
-  border-radius: var(--db-radius-card);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 

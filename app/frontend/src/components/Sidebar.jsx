@@ -11,7 +11,7 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">Rail</div>
+      <div className="sidebar-brand">Rail Analytics</div>
       <nav className="sidebar-nav">
         {NAV_ITEMS.map(({ to, end, label, Icon }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? "active" : "")}>

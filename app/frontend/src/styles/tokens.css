@@ -1,8 +1,10 @@
 /* Design tokens condensed from the three style references in docs/ — namespaced by which part
    of the UI they drive (docs/DESIGN.md Section 7 assigns each page/component to one of them).
    Font substitutes used here match what each reference doc lists as its own substitute.
-   Typography app-wide uses form-elements' font (IBM Plex Sans, --fe-font) rather than
-   form-main's — form-main's tokens here are colors/radii only. */
+   The app shell (body/sidebar/dashboard-content) and the History page use a light,
+   teal-accented dashboard palette (Inter, --db-font); the Predict flow and its form controls
+   (buttons, upload, subsystem picker, "Dashboard" results page) keep form-elements' font
+   (IBM Plex Sans, --fe-font) and form-main's, unchanged. */
 
 :root {
   /* ---- form-main: DESIGN_FORM_MAIN.md (Typeform) — headers, usage blurb, upload/download ---- */
@@ -14,8 +16,6 @@
   --fm-ash: #655d67;
   --fm-mist: #d4d1d5;
   --fm-parchment: #f5f3f6;
-  --fm-radius-button: 12px;
-  --fm-radius-card: 24px;
 
   /* ---- form-elements: DESIGN_FORM_ELEMENTS.md (Buddy) — subsystem selector, dashboard components ---- */
   --fe-lime: #bfff5a;
@@ -29,22 +29,39 @@
   --fe-pewter: #6b6d72;
   --fe-mint-tint: #d8fbed;
   --fe-font: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --fe-radius-pill: 56px;
-  --fe-radius-card: 24px;
-  --fe-radius-inner: 14px;
 
-  /* ---- dashboard: DESIGN_DASHBOARD.md (Dub) — history/table page ---- */
+  /* ---- dashboard: app shell/sidebar + history/table page. Light analytics-dashboard palette
+     (per reference screenshot, not the dark navy in docs/DESIGN_DASHBOARD.md — that doc's
+     literal dark theme was tried and rejected in favour of this lighter look): white
+     sidebar/cards floating on a soft gray content backdrop, dark navy text, teal accent. */
+  --db-page: #eef1f6;
   --db-canvas: #ffffff;
-  --db-paper: #f5f5f5;
-  --db-border: #e5e5e5;
-  --db-ink: #171717;
-  --db-muted: #737373;
-  --db-accent: #2563eb;
-  --db-mint: #dcfce7;
+  --db-paper: #f3f5f9;
+  --db-card-hover: #eef1f6;
+  --db-border: #e7eaf0;
+  --db-ink: #1b2559;
+  --db-muted: #6b7280;
+  --db-tertiary: #98a2b3;
+  --db-accent: #0f766e;
+  --db-accent-tint: #e0f2f1;
+  --db-positive: #16a34a;
+  --db-positive-tint: #dcfce7;
+  --db-negative: #dc2626;
+  --db-negative-tint: #fee2e2;
+  --db-warning: #d97706;
+  --db-warning-tint: #fef3c7;
+  --db-mint: #16a34a;
   --db-font: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --db-radius-card: 12px;
-  --db-radius-pill: 9999px;
-  --db-radius-button: 8px;
+
+  /* ---- shared radius scale — used everywhere, regardless of which doc a component's colors
+     come from, so cards/buttons/chips read as one consistent system rather than three. Anchored
+     at 10px (--radius-md, originally .subsystem-card's own value) and scaled by container size:
+     small tiles/chips step down to 6px, page-level hero panels step up to 14px, true pills
+     stay fully round. ---- */
+  --radius-xs: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 9999px;
 
   /* shared status colors, used consistently across all three surfaces */
   --status-normal: #16a34a;

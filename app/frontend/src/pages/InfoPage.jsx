@@ -6,11 +6,11 @@ const USAGE_STEPS = [
 
 export default function InfoPage() {
   return (
-    <div className="page-container">
+    <div className="page-container info-page">
       <div className="predict-header">
         <h1>Run a prediction</h1>
         <p>
-          Pick a subsystem, upload the matching test file(s), and get predictions back — with a
+          Pick a subsystem, upload the matching test file(s), and get predictions back, with a
           downloadable CSV and a visual dashboard for the run.
         </p>
       </div>

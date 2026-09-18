@@ -1,486 +1,202 @@
-# Dub — Style Reference
-> frosted link dashboard on rice paper
+# Midnight Banking Dashboard
 
-**Theme:** light
+## Overview
 
-Dub's visual system is a quiet, almost editorial SaaS aesthetic — a near-white canvas held together by hairline borders rather than elevation, with dense monochrome typography doing the structural work and one electric blue (#2563eb) doing the talking. Surfaces stay flat and borderless-looking at a glance, but every container carries a 1px #e5e5e5 edge that creates a printed-document feel. The personality comes from a small vocabulary of colored 'feature pill' accents (orange, green, violet) that float above the otherwise neutral palette, and from Satoshi-weight-500 display headlines that read as confident and contemporary without being loud. Components are compact and dense: 8px gaps, 12px card radius, pill-shaped tags at 9999px, and ghost controls instead of heavy filled buttons.
+Midnight Banking is a dark-first design system for personal banking and fintech dashboards. Its foundation of deep midnight navy creates a calm, premium canvas against which gradient account cards and warm financial-product cards become the visual focal points. Status colors lean confident: a soft mint green for incoming amounts, a coral red for outgoing. The system prioritizes scannability of monetary values, clear separation between primary actions and informational content, and a polished, modern aesthetic appropriate for high-trust financial flows.
 
-## Tokens — Colors
+Source: extracted from a Figma "Home Banking" desktop dashboard (1600 × 1056 canvas), tokenized into a reusable system.
 
-| Name | Value | Token | Role |
-|------|-------|-------|------|
-| Canvas White | `#ffffff` | `--color-canvas-white` | Page background, card surfaces, popover panels — the absolute base of every screen |
-| Paper Mist | `#f5f5f5` | `--color-paper-mist` | Subtle alt-surface for nested cards, secondary panels, and hover fills |
-| Ash | `#e5e5e5` | `--color-ash` | Hairline borders on cards, inputs, and dividers — the structural line that holds the system together |
-| Smoke | `#d4d4d4` | `--color-smoke` | Stronger borders for emphasis containers and secondary button outlines |
-| Pebble | `#c8c8c8` | `--color-pebble` | Medium-contrast borders, control outlines, and structural separators. Do not promote it to the primary CTA color |
-| Midnight Ink | `#0a0a0a` | `--color-midnight-ink` | Primary button text, high-emphasis buttons, nav text — near-black for maximum contrast |
-| Charcoal | `#171717` | `--color-charcoal` | Body text, button text, default heading color — slightly softer than pure black |
-| Graphite | `#262626` | `--color-graphite` | Secondary text, icon strokes, subtle UI elements |
-| Slate | `#404040` | `--color-slate` | Tertiary text, nav hover states, subdued iconography |
-| Steel | `#525252` | `--color-steel` | Muted body text, helper text, less-prominent labels |
-| Fog | `#737373` | `--color-fog` | Placeholder text, disabled states, link text in rest state |
-| Silver | `#a3a3a3` | `--color-silver` | Disabled iconography, decorative strokes, very light dividers |
-| Electric Blue | `#2563eb` | `--color-electric-blue` | Primary brand color — logo, links, key metric highlights, active states, icon accents. Saturated blue against white gives the system its one moment of visual voltage |
-| Deep Sapphire | `#1e40af` | `--color-deep-sapphire` | Primary action button background, high-emphasis CTA fill — the single committed action color, used sparingly so it earns attention |
-| Soft Mint | `#dcfce7` | `--color-soft-mint` | Gray outline accent for tags, dividers, and focused UI edges. Use as a supporting accent, not as a status color |
-| Vivid Green | `#16a34a` | `--color-vivid-green` | Green text accent for links, tags, and emphasized short phrases. Use as a supporting accent, not as a status color |
-| Tangerine | `#ea580c` | `--color-tangerine` | Orange text accent for links, tags, and emphasized short phrases. |
-| Lavender | `#7c3aed` | `--color-lavender` | Violet text accent for links, tags, and emphasized short phrases. |
-| Conic Spectrum | `conic-gradient(from -81deg, #ff0000, #eab308 99deg, #5cff80 162deg, #00fff9 216deg, #3a8bfd 288deg, #855afc)` | `--color-conic-spectrum` | Decorative gradient — used as full-spectrum conic gradient on brand visuals and logo, never on UI elements |
-| Primary Action Fill | `#000000` | `--color-primary-action-fill` | High-contrast neutral action fill for primary buttons on light surfaces. Use as the primary filled action background |
+---
 
-## Tokens — Typography
+## Colors
 
-### Satoshi — Display headings — used only at 36–48px for hero and section titles. Weight 500 (medium, not bold) is the signature: headings feel confident and modern but never shout. Satoshi's geometric proportions give the type a slightly editorial, contemporary feel that Inter body text can't replicate. · `--font-satoshi`
-- **Substitute:** Inter (weight 500, letter-spacing -0.02em) or General Sans
-- **Weights:** 500
-- **Sizes:** 36px, 40px, 48px
-- **Line height:** 1.0–1.11
-- **Letter spacing:** normal
-- **Role:** Display headings — used only at 36–48px for hero and section titles. Weight 500 (medium, not bold) is the signature: headings feel confident and modern but never shout. Satoshi's geometric proportions give the type a slightly editorial, contemporary feel that Inter body text can't replicate.
+### Page & Surfaces
+- **Page Background** (#040D3F): Very dark midnight navy — primary page canvas
+- **Surface Default** (#141C4E): Slightly lighter navy — header bars, large surface regions
+- **Card Background** (#1D2552): Card and tile fill — transaction rows, KPI tiles, sidebar items
+- **Card Background Hover** (#243066): Hover state for cards and rows
 
-### Inter — Body, UI labels, navigation, subheadings, small headings. Inter is the workhorse — handles everything from 11px micro-labels to 30px secondary headlines. Weight 400 is default body, 500 for emphasis and button labels, 600 reserved for important UI labels. The 16px size at lineHeight 1.5 is the most frequent single step (1220 occurrences), confirming 16px as the canonical body size. · `--font-inter`
-- **Substitute:** Inter (native)
-- **Weights:** 400, 500, 600
-- **Sizes:** 8px, 10px, 11px, 12px, 13px, 14px, 16px, 18px, 20px, 24px, 30px
-- **Line height:** 1.33–1.56
-- **Role:** Body, UI labels, navigation, subheadings, small headings. Inter is the workhorse — handles everything from 11px micro-labels to 30px secondary headlines. Weight 400 is default body, 500 for emphasis and button labels, 600 reserved for important UI labels. The 16px size at lineHeight 1.5 is the most frequent single step (1220 occurrences), confirming 16px as the canonical body size.
+### Foreground / Text
+- **Text Primary** (#FFFFFF): Headlines, primary labels, on-card text
+- **Text Secondary** (#B9BBC7): Muted body, subtitles, "View All" links
+- **Text Tertiary** (#6A7178): Disabled states, very low-emphasis text
+- **Neutral 4** (#DEE2E6): Light dividers
+- **Neutral 6** (#ADB5BD): Neutral badge fills, mid-grey text on light surfaces
 
-### Geist Mono — Code snippets, technical metadata, inline monospace tokens. Used at 12–14px in code blocks and 24px for large code display elements. Provides the developer-tool credibility that matches Dub's product positioning. · `--font-geist-mono`
-- **Substitute:** JetBrains Mono or IBM Plex Mono
-- **Weights:** 400, 500
-- **Sizes:** 12px, 14px, 24px
-- **Line height:** 1.0–1.43
-- **Role:** Code snippets, technical metadata, inline monospace tokens. Used at 12–14px in code blocks and 24px for large code display elements. Provides the developer-tool credibility that matches Dub's product positioning.
+### Status / Signed Amounts
+- **Positive** (#7FE089): Incoming transactions, positive deltas, success badges
+- **Negative** (#F97D7D): Outgoing transactions, negative deltas, error states
+- **Info Cyan** (#0D8091): Cyan accent — informational badges, secondary CTAs
 
-### Type Scale
+### Account Card Gradients
+Three named gradients that drive the horizontal account-card carousel. Each is a 135° linear gradient from a deeper anchor stop to a lighter accent.
+- **Card Turquoise**: linear-gradient(135deg, #0D8091 0%, #1AB8C7 100%) — Checking accounts
+- **Card Pink**: linear-gradient(135deg, #B53D7F 0%, #E45D9A 100%) — Savings accounts
+- **Card Purple**: linear-gradient(135deg, #5A2D8A 0%, #8B4FBF 100%) — Credit / charge accounts
 
-| Role | Size | Line Height | Letter Spacing | Token |
-|------|------|-------------|----------------|-------|
-| caption | 11px | 1.5 | — | `--text-caption` |
-| body | 14px | 1.43 | — | `--text-body` |
-| body-lg | 16px | 1.5 | — | `--text-body-lg` |
-| body-xl | 18px | 1.56 | — | `--text-body-xl` |
-| subheading | 20px | 1.4 | — | `--text-subheading` |
-| heading-sm | 24px | 1.33 | — | `--text-heading-sm` |
-| heading | 30px | 1.38 | — | `--text-heading` |
-| heading-lg | 36px | 1.11 | — | `--text-heading-lg` |
-| display | 48px | 1 | — | `--text-display` |
+### Financial-Product Card Gradients
+Used for sidebar promotional cards (loans, retirement, goal CTAs). Higher-saturation, marketing-tone.
+- **Product Yellow**: linear-gradient(135deg, #D4A017 0%, #F2C94C 100%) — Personal Loan, Credit Card Request, Retirement Plan
+- **Product Pink Soft**: linear-gradient(135deg, #E64980 0%, #FF6B9D 100%) — "Define New Goal" CTAs
+- **Product Cyan Soft**: linear-gradient(135deg, #2D7DD2 0%, #4FA8E8 100%) — "For You" recommendations, customised solutions
 
-## Tokens — Spacing & Shapes
+---
 
-**Base unit:** 4px
+## Typography
 
-**Density:** compact
+- **Headline Font**: Inter
+- **Body Font**: Inter
+- **Mono Font**: JetBrains Mono (for tabular monetary alignment)
 
-### Spacing Scale
+- **Display**: Inter 32px bold, 1.2 line height — page-level totals, hero balance values
+- **H1 / Page Title**: Inter 22px bold, 1.25 line height — KPI primary values ("$3,689.12"), card balance numbers
+- **H2 / Section Title**: Inter 16px semibold, 1.3 line height — "Total Balance", "Last Transactions", "Your Goals", "Financial Assets", "For you"
+- **Card Title**: Inter 16px semibold, 1.3 line height — gradient-card account names, goal/product card titles
+- **Body**: Inter 14px medium, 1.4 line height — transaction merchant names, nav links, action button labels, hero greeting
+- **Body Subtle**: Inter 13px medium, 1.4 line height — amount lines ("$543 of $1,000"), "View All" links
+- **Caption**: Inter 12px regular, 1.4 line height — transaction subtitles, KPI labels, dates, delta percentages
+- **Micro**: Inter 11px semibold, 1.3 line height — status badges ("Under Approval"), small chips
+- **Mono Numeric**: JetBrains Mono 14px medium, 1.4 line height — tabular amounts, account numbers, last-4 digits
 
-| Name | Value | Token |
-|------|-------|-------|
-| 4 | 4px | `--spacing-4` |
-| 8 | 8px | `--spacing-8` |
-| 12 | 12px | `--spacing-12` |
-| 16 | 16px | `--spacing-16` |
-| 20 | 20px | `--spacing-20` |
-| 24 | 24px | `--spacing-24` |
-| 28 | 28px | `--spacing-28` |
-| 32 | 32px | `--spacing-32` |
-| 36 | 36px | `--spacing-36` |
-| 40 | 40px | `--spacing-40` |
-| 48 | 48px | `--spacing-48` |
-| 56 | 56px | `--spacing-56` |
-| 64 | 64px | `--spacing-64` |
-| 80 | 80px | `--spacing-80` |
-| 96 | 96px | `--spacing-96` |
-| 112 | 112px | `--spacing-112` |
+---
 
-### Border Radius
+## Spacing
 
-| Element | Value |
-|---------|-------|
-| tags | 9999px |
-| cards | 12px |
-| inputs | 6px |
-| buttons | 8px |
-| largeCards | 16px |
+Base unit: **8px**
+- **xs**: 4px — Inline icon gaps, badge padding
+- **sm**: 8px — Tight component padding, gap between adjacent rows
+- **md**: 12px — Pill button gap, action-row spacing
+- **lg**: 16px — Default card/tile padding, gap between cards in carousel
+- **xl**: 20px — Inside the gradient cards
+- **2xl**: 24px — Outer page padding, gap between main column and sidebar, gap between sidebar sections
+- **3xl**: 32px — Major section breaks within a column
 
-### Shadows
+---
 
-| Name | Value | Token |
-|------|-------|-------|
-| subtle | `rgba(0, 0, 0, 0.05) 0px 1px 2px 0px` | `--shadow-subtle` |
-| sm | `rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0...` | `--shadow-sm` |
-| sm-2 | `rgba(0, 0, 0, 0.2) 0px 2px 6px 0px inset` | `--shadow-sm-2` |
-| subtle-2 | `rgba(0, 0, 0, 0.1) 0px 0px 0px 4px` | `--shadow-subtle-2` |
-| md | `rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1)...` | `--shadow-md` |
-| lg | `rgba(0, 0, 0, 0.09) 0px 20px 20px 0px` | `--shadow-lg` |
-| subtle-3 | `rgb(255, 255, 255) 0px 0px 0px 3px, rgb(0, 0, 0) 0px 0px ...` | `--shadow-subtle-3` |
+## Border Radius
 
-### Layout
+- **xs** (6px): Status badges, small chips ("Under Approval")
+- **sm** (8px): Light dividers, small accents
+- **DEFAULT** (12px): Tile and row backgrounds — transaction rows, KPI tiles, sidebar product cards, goal cards
+- **lg** (16px): Large gradient account cards in the carousel
+- **full** (9999px): Pill buttons (Transfer / Pay / Add / View / Account Insights), avatar circles, progress-bar tracks
 
-- **Page max-width:** 1200px
-- **Section gap:** 64px
-- **Card padding:** 16px
-- **Element gap:** 8px
-
-## Components
-
-### Ghost Nav Button
-**Role:** Navigation bar item
-
-Transparent background, #171717 text, 9999px radius, no border, 16px horizontal padding. Used for top-level nav items like Product, Solutions, Resources, Enterprise. No visible border until hover.
-
-### Outlined Nav Button
-**Role:** Secondary nav action (Log in)
-
-White background (#ffffff), #171717 text, 1px #e5e5e5 border, 8px radius, 16px horizontal padding. Compact and quiet — the 'I'm here but I don't need to be seen' variant.
-
-### Filled Dark CTA
-**Role:** Primary action button (Sign up)
-
-Near-black background (#0a0a0a or #171717), white text, 8px radius, 16px horizontal padding. The committed action — used once per surface for the primary conversion goal.
-
-### Outlined Action Button
-**Role:** Secondary or utility action (Learn more, View invoices)
-
-White background, #171717 text, 1px #e5e5e5 border, 8px radius, 12px vertical / 16px horizontal padding. The workhorse button — used for most non-primary actions throughout the UI.
-
-### Pill Feature Tag
-**Role:** Feature category indicator in hero and nav
-
-Transparent or white background, small colored icon (orange/violet/green emoji-style glyph), #171717 label text, 9999px radius, 12px vertical / 16px horizontal padding. These floating pills (Affiliate Programs, Conversion Analytics, Short Links) are the system's signature decorative element.
-
-### Pill Badge
-**Role:** Status, count, or label indicator
-
-Transparent or white background, #0a0a0a text, 9999px radius, minimal padding. Used for small notification dots, version labels, and category markers.
-
-### Dashboard Card
-**Role:** Primary product surface container
-
-White background (#ffffff), 1px #e5e5e5 border, 12px radius, 8px internal padding. The most frequent component (57 variants) — flat, border-defined, no shadow. Rely on borders and spacing for visual structure, not elevation.
-
-### Elevated Feature Card
-**Role:** Showcase or feature card with depth
-
-White background, 16px radius, 16px padding, subtle box-shadow: rgba(0,0,0,0.1) 0px 0px 0px 4px ring effect. Used sparingly to lift hero product mockups and featured content above surrounding flat cards.
-
-### Muted Alt Card
-**Role:** Secondary panel or grouped content surface
-
-Light gray background (#fafafa), 16px radius, 16px padding, no border. Provides tonal contrast when nesting content inside a white card or on the white canvas.
-
-### Dashboard Table Row
-**Role:** Data table body row
-
-Transparent or white background, 1px #e5e5e5 bottom border, 16px row height, 14–16px text. Minimal vertical density — rows breathe with generous padding for scannability.
-
-### Status Badge (Pending/Completed)
-**Role:** Row-level state indicator in tables
-
-Tinted background (soft mint #dcfce7 for completed, light yellow/orange wash for pending), small colored dot icon, dark text, pill radius (9999px), 6px vertical / 10px horizontal padding. Compact inline state communication.
-
-### Sidebar Nav Item
-**Role:** Dashboard sidebar navigation
-
-Transparent or light blue (#dbeaff) active background, 8px radius, #171717 text, 12px vertical / 8px horizontal padding. Active state uses a soft chromatic fill rather than a bold left-border indicator.
-
-### Input Field
-**Role:** Form input, search, URL field
-
-White background, #111827 text, 1px #000000 border (distinctive — inputs use near-black border instead of #e5e5e5 for emphasis), 6px radius, 8px vertical / 12px horizontal padding. The black border is a signature: inputs feel important, not optional.
-
-### Logo Cloud Item
-**Role:** Customer/social proof logo display
-
-Transparent background, grayscale (#262626 to #737373) wordmark, no border, centered in grid cell. Logos desaturated to harmonize with monochrome palette — color appears only in active or interactive states.
-
-### Product Mockup Container
-**Role:** Hero screenshot or dashboard preview frame
-
-White background, 16px top-left/top-right radius (asymmetric — bottom is flush), subtle 4px outer ring shadow for depth. Container is a window into the product, not a framed picture — it sits on the canvas like a floating panel.
-
-## Do's and Don'ts
-
-### Do
-- Use #e5e5e5 for all container borders — 1px solid is the default structural line, not shadows
-- Reserve #1e40af (Deep Sapphire) for exactly one primary action per surface — never use it decoratively
-- Use Satoshi weight 500 at 36–48px for display headlines; switch to Inter for everything 30px and below
-- Use 9999px radius for all tags, badges, and pill-shaped indicators; 8px for buttons; 12px for cards; 16px for large feature cards
-- Use 16px as the canonical body text size with lineHeight 1.5; drop to 14px for dense data and 11–12px for micro-labels
-- Apply the soft tint palette (#dcfce7 mint, #dbeaff blue, light yellow) to small badge backgrounds and feature highlights — not to large surfaces
-- Keep imagery as product UI mockups and desaturated logos; avoid stock photography and decorative illustrations
-
-### Don't
-- Don't use heavy drop shadows for card elevation — the system relies on 1px borders, not depth, to define containers
-- Don't use pure black (#000000) for body text — use #171717 or #0a0a0a for slightly softer contrast
-- Don't apply the Electric Blue (#2563eb) to large background fills — it's a highlight color, not a surface color
-- Don't use multiple chromatic colors on a single component — each pill or feature tag gets exactly one accent
-- Don't use Satoshi at body sizes — Satoshi is display-only (36px+); Inter handles everything below 30px
-- Don't use radii outside the defined vocabulary (9999px, 16px, 12px, 8px, 6px) — ad-hoc rounding breaks the system's rhythm
-- Don't use color for decorative gradients on UI elements — the conic spectrum gradient is reserved for the logo and brand visuals only
-
-## Surfaces
-
-| Level | Name | Value | Purpose |
-|-------|------|-------|---------|
-| 0 | Canvas | `#ffffff` | Page background — the base layer, always pure white |
-| 1 | Paper | `#f5f5f5` | Alt-section backgrounds, nested panel surfaces, subtle hover fills |
-| 2 | Card | `#ffffff` | Product cards, dashboard surfaces, popovers — white-on-white separated by 1px #e5e5e5 border |
-| 3 | Tinted Accent | `#dcfce7` | Decorative wash for feature highlights and 'new' badges |
+---
 
 ## Elevation
 
-- **Primary buttons:** `rgba(0, 0, 0, 0.05) 0px 1px 2px 0px`
-- **Elevated cards:** `rgba(0, 0, 0, 0.1) 0px 0px 0px 4px`
-- **Feature showcase cards:** `rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1) 0px 4px 6px -4px`
-- **Product mockup frames:** `rgba(0, 0, 0, 0.1) 0px 0px 0px 4px`
+Banking dashboards use a two-tier shadow system: a tight subtle shadow for tiles, and a deep ambient glow for hero cards.
 
-## Imagery
+- **Tile Shadow** (`0 2px 4px 0 rgba(0, 0, 0, 0.10)`): Transaction rows, KPI tiles, sidebar items, dropdown menus
+- **Card Shadow Big** (`0 0 60px 0 rgba(0, 4, 26, 0.60)`): Gradient account cards in the carousel — produces a soft midnight glow against the page background
+- **Modal Shadow** (`0 8px 32px 0 rgba(0, 0, 0, 0.30)`): Modals, bottom sheets
 
-Imagery is product-first, not lifestyle. The hero centers a large dashboard screenshot — a real product mockup with sidebar nav, data table, and floating UI elements — presented as a flat panel on the white canvas. Customer logos appear in a desaturated grayscale grid (beehiv, superpower, Chatbase, etc.) for social proof, stripped of color so the page's single blue accent stays dominant. Floating partner cards (small profile + revenue/payout tiles) drift around editorial text blocks in the lower section, giving a sense of depth without using shadows on the text itself. The dotted grid background pattern is a signature: a fine array of small dots at very low opacity creates texture and a sense of a design system / blueprint surface, reinforcing the 'modern link attribution platform' positioning. Iconography is small, outlined-to-filled, and uses the accent palette (orange tangerine, violet lavender, green mint) for feature tags. No photography, no illustrations, no 3D — the product UI IS the visual language.
+---
 
-## Layout
+## Components
 
-The page follows a centered, max-width contained model at approximately 1200px. The hero is a centered text stack with three floating feature pills (Affiliate Programs, Conversion Analytics, Short Links) arranged horizontally above a large product mockup. Sections stack vertically with consistent 64px gaps, alternating between white canvas and the #f5f5f5 paper mist for tonal separation. The lower section uses a z-pattern: editorial text centered in the middle third, with floating UI cards anchored at the left and right margins, creating an asymmetric, magazine-like rhythm. The logo cloud is a simple 5×2 grid centered on the page. Navigation is a minimal top bar — logo left, nav center, two-button cluster (ghost Log in + filled Sign up) right — with no sticky or mega-menu behavior. The dashboard mockup in the hero shows a classic 2-column app shell: fixed sidebar (240px-ish) + content area, establishing the product's information density for visitors before they scroll.
+### Header Bar
+- **Height**: 88px, full page width
+- **Background**: `--surface-default` (#141C4E)
+- **Layout** (left → right): Wordmark logo, centered nav (5 links, 24px gap), right cluster (icon trio + welcome greeting + avatar)
+- **Wordmark**: Inter 20px bold, `--text-primary`
+- **Nav links**: Inter 14px medium, `--text-secondary` (default) / `--text-primary` underlined (active)
+- **Right icons**: 20×20, `--text-secondary`, hoverable to `--text-primary`
+- **Avatar**: 40×40 circle, background `--card-bg`, initials in `--text-primary` 14px semibold
 
-## Agent Prompt Guide
+### Gradient Account Card
+- **Size**: ~340px wide × 180px tall
+- **Background**: One of `--card-turquoise`, `--card-pink`, `--card-purple`
+- **Padding**: 20px
+- **Radius**: 16px
+- **Shadow**: Card Shadow Big (deep ambient midnight glow)
+- **Top row**: Card title left (Inter 16px semibold, white), small network wordmark / chip top-right (white 80% alpha)
+- **Bottom row**: Masked number left ("•••• 0001", JetBrains Mono 14px medium, white 80% alpha), balance value top-right (Inter 22px bold, white)
+- **Carousel layout**: 3 cards horizontal, 16px gap, no scrollbar on desktop
 
-## Quick Color Reference
-- Text primary: #171717
-- Text muted: #737373
-- Background: #ffffff
-- Surface alt: #f5f5f5
-- Border: #e5e5e5
-- Accent: #2563eb
-- primary action: #000000 (filled action)
+### Pill Action Button
+- **Padding**: 8px 16px (compact) / 10px 20px (default)
+- **Radius**: full (9999px)
+- **Font**: Inter 13px semibold
+- **Variants**:
+  - **Primary on dark**: White (#FFFFFF) fill, `--page-bg` (#040D3F) text — used for "Transfer / Pay / Add" action row
+  - **Toggle Active**: `--card-bg` (#1D2552) fill, `--text-primary` text — used for active toggle state ("Show Balance")
+  - **Toggle Inactive**: transparent fill, `--text-secondary` text, 1px `--card-bg` border
+  - **Small View**: White fill, `--page-bg` text, smaller padding (6px 12px) — used inside product cards as "View" / "Add"
 
-## Example Component Prompts
-1. **Hero Feature Pill**: Transparent background, 9999px radius, 8px vertical / 16px horizontal padding. Small colored emoji-style icon (orange tangerine #ea580c for 'Short Links', violet #7c3aed for 'Conversion Analytics', green #16a34a for 'Affiliate Programs') + 14px Inter weight 500 #171717 label. No border.
+### Transaction Row
+- **Background**: `--card-bg` (#1D2552)
+- **Padding**: 16px
+- **Radius**: 12px
+- **Margin between rows**: 8px
+- **Layout** (left → right):
+  - 32×32 circular icon container — green tint (`#7FE08920`) for Incoming, red tint (`#F97D7D20`) for Outgoing — with `ArrowUp` / `ArrowDown` icon centered
+  - Stacked center text — DisplayType (Inter 14px semibold, white) + MerchantName (Inter 12px regular, `--text-secondary`)
+  - Stacked right text — signed amount (Inter 14px semibold, color from direction) + date (Inter 12px regular, `--text-secondary`, "dd MMM" format)
 
-2. **Dashboard Card**: White (#ffffff) background, 1px #e5e5e5 border, 12px radius, 16px padding. Content inside uses 14–16px Inter weight 400 #171717. No shadow — borders define the container.
+### KPI Tile
+- **Background**: `--card-bg` (#1D2552)
+- **Padding**: 16px
+- **Radius**: 12px
+- **Gap between tiles**: 8px
+- **Anatomy**:
+  - Small icon top-left (20×20, `--text-secondary`)
+  - Label below icon — Inter 12px medium, `--text-secondary`
+  - Primary value — Inter 22px bold, `--text-primary`
+  - Delta line — Inter 12px semibold, `--positive` or `--negative` (with leading "+" / "-")
 
-3. Create a Primary Action Button: #000000 background, #ffffff text, 9999px radius, compact pill padding. Use this filled treatment for the main CTA.
+### Goal / Product Card
+- **Background**: `--card-bg` (default goal card) or one of the product gradients (loan/promo cards)
+- **Padding**: 16px
+- **Radius**: 12px
+- **Min-height**: 80px (compact) / unbounded (full)
+- **Anatomy**:
+  - Top row: small icon left (20×20), title center (Inter 14px semibold, white), action pill right ("Add" / "View" — small variant)
+  - Body line: amount or subtitle (Inter 13px medium, `--text-secondary` on `--card-bg`, white-80% on gradient cards)
+  - Optional progress bar (full-width, 4px tall — see Progress Bar)
+  - Optional decorative illustration on the right at white 30% alpha
 
-4. **Outlined Action Button**: White (#ffffff) background, #171717 text, 1px #e5e5e5 border, 8px radius, 6px vertical / 12px horizontal padding. 14px Inter weight 500. Use for secondary actions like 'Learn more' or 'View invoices'.
+### Progress Bar
+- **Height**: 4px
+- **Track background**: `--card-bg-hover` (#243066) on dark cards, white-30% on gradient cards
+- **Fill color**: `--positive` (#7FE089) for goals on track, `--text-primary` (white) on gradient product cards
+- **Radius**: full (rounded ends)
 
-5. **Display Headline**: Satoshi weight 500, 48px, lineHeight 1.0, color #171717. No letter-spacing adjustment. Use only for the largest hero and section titles — switch to Inter for anything 30px or below.
+### Status Badge
+- **Padding**: 4px 8px
+- **Radius**: 6px
+- **Font**: Inter 11px semibold
+- **Variants**:
+  - **Neutral**: `--neutral-badge` (#ADB5BD) fill, `--text-primary` text — for "Under Approval", "Pending"
+  - **Success**: `--positive` 15% fill, `--positive` text — for "Active", "On Track"
+  - **Error**: `--negative` 15% fill, `--negative` text — for "Behind", "Failed"
+  - **Info**: `--info-cyan` 15% fill, `--info-cyan` text — for "New", "Achieved"
 
-## Border-First Elevation Philosophy
+### Avatar
+- **Size**: 40×40 (default) / 32×32 (compact)
+- **Radius**: full (circle)
+- **Background**: `--card-bg` (#1D2552)
+- **Content**: Initials (1–2 chars) centered in Inter 14px semibold, `--text-primary`
 
-Dub deliberately uses 1px borders over shadows as the primary container-defining mechanism. The base border color is #e5e5e5 at 1px solid — used 1942 times across the system, making it the most deployed visual element. Shadows are reserved for three specific cases: (1) a barely-there 1px lift on primary buttons (rgba(0,0,0,0.05) 0px 1px 2px), (2) a 4px outer ring on elevated feature cards and product mockups to create a 'floating panel' effect, and (3) the layered 10px/4px shadow stack on hero showcase elements. The philosophy: borders create a printed-document clarity that's better for information-dense SaaS UIs, while shadows are saved for moments that need to truly pop off the page. This is the opposite of Material Design's shadow-heavy approach.
+### Section Header
+- **Layout**: Title left, "View All" link right
+- **Title**: Inter 16px semibold, `--text-primary`
+- **Link**: Inter 13px medium, `--text-secondary`, underline on hover
+- **Spacing**: 16px below the header before the content begins
 
-## Pill Architecture
+---
 
-The 9999px radius is deployed 367 times — the second most common radius token. It's used for: feature category tags, status badges, notification dots, partner avatars, and pill-shaped nav elements. Combined with the 8px and 12px radii for buttons and cards, the system has a clear three-tier radius vocabulary: pills (9999px) for tags and badges, medium (8–12px) for buttons and cards, large (16px) for feature surfaces. This tight radius discipline is a key part of what makes the design feel intentional and cohesive.
+## Do's and Don'ts
 
-## Similar Brands
-
-- **Linear** — Same light-canvas + monochrome + single-accent approach, with similar compact density and 1px-border container treatment over heavy shadows
-- **Vercel** — Geometric sans-serif headlines at weight 500 (not bold), hairline borders, white-on-white card surfaces with 12px radius, and a restrained color palette that lets the product UI do the visual work
-- **Cal.com** — Open-source SaaS with the same pill-button + flat card aesthetic, similar use of small colored feature tags floating above monochrome layouts, and Inter as the primary workhorse font
-- **Plausible Analytics** — Editorial-meets-dashboard layout with centered text stacks, floating UI cards, dotted grid background texture, and a near-monochrome palette with a single accent color for emphasis
-- **Raycast** — Compact information density, border-defined containers instead of shadows, pill-shaped status indicators, and a confident use of one saturated accent (blue) against near-black text
-
-## Quick Start
-
-### CSS Custom Properties
-
-```css
-:root {
-  /* Colors */
-  --color-canvas-white: #ffffff;
-  --color-paper-mist: #f5f5f5;
-  --color-ash: #e5e5e5;
-  --color-smoke: #d4d4d4;
-  --color-pebble: #c8c8c8;
-  --color-midnight-ink: #0a0a0a;
-  --color-charcoal: #171717;
-  --color-graphite: #262626;
-  --color-slate: #404040;
-  --color-steel: #525252;
-  --color-fog: #737373;
-  --color-silver: #a3a3a3;
-  --color-electric-blue: #2563eb;
-  --color-deep-sapphire: #1e40af;
-  --color-soft-mint: #dcfce7;
-  --color-vivid-green: #16a34a;
-  --color-tangerine: #ea580c;
-  --color-lavender: #7c3aed;
-  --color-conic-spectrum: #8b5cf6;
-  --gradient-conic-spectrum: conic-gradient(from -81deg, #ff0000, #eab308 99deg, #5cff80 162deg, #00fff9 216deg, #3a8bfd 288deg, #855afc);
-  --color-primary-action-fill: #000000;
-
-  /* Typography — Font Families */
-  --font-satoshi: 'Satoshi', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  /* Typography — Scale */
-  --text-caption: 11px;
-  --leading-caption: 1.5;
-  --text-body: 14px;
-  --leading-body: 1.43;
-  --text-body-lg: 16px;
-  --leading-body-lg: 1.5;
-  --text-body-xl: 18px;
-  --leading-body-xl: 1.56;
-  --text-subheading: 20px;
-  --leading-subheading: 1.4;
-  --text-heading-sm: 24px;
-  --leading-heading-sm: 1.33;
-  --text-heading: 30px;
-  --leading-heading: 1.38;
-  --text-heading-lg: 36px;
-  --leading-heading-lg: 1.11;
-  --text-display: 48px;
-  --leading-display: 1;
-
-  /* Typography — Weights */
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-
-  /* Spacing */
-  --spacing-unit: 4px;
-  --spacing-4: 4px;
-  --spacing-8: 8px;
-  --spacing-12: 12px;
-  --spacing-16: 16px;
-  --spacing-20: 20px;
-  --spacing-24: 24px;
-  --spacing-28: 28px;
-  --spacing-32: 32px;
-  --spacing-36: 36px;
-  --spacing-40: 40px;
-  --spacing-48: 48px;
-  --spacing-56: 56px;
-  --spacing-64: 64px;
-  --spacing-80: 80px;
-  --spacing-96: 96px;
-  --spacing-112: 112px;
-
-  /* Layout */
-  --page-max-width: 1200px;
-  --section-gap: 64px;
-  --card-padding: 16px;
-  --element-gap: 8px;
-
-  /* Border Radius */
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-2xl-2: 20px;
-  --radius-full: 9999px;
-
-  /* Named Radii */
-  --radius-tags: 9999px;
-  --radius-cards: 12px;
-  --radius-inputs: 6px;
-  --radius-buttons: 8px;
-  --radius-largecards: 16px;
-
-  /* Shadows */
-  --shadow-subtle: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
-  --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
-  --shadow-sm-2: rgba(0, 0, 0, 0.2) 0px 2px 6px 0px inset;
-  --shadow-subtle-2: rgba(0, 0, 0, 0.1) 0px 0px 0px 4px;
-  --shadow-md: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1) 0px 4px 6px -4px;
-  --shadow-lg: rgba(0, 0, 0, 0.09) 0px 20px 20px 0px;
-  --shadow-subtle-3: rgb(255, 255, 255) 0px 0px 0px 3px, rgb(0, 0, 0) 0px 0px 0px 4px;
-
-  /* Surfaces */
-  --surface-canvas: #ffffff;
-  --surface-paper: #f5f5f5;
-  --surface-card: #ffffff;
-  --surface-tinted-accent: #dcfce7;
-}
-```
-
-### Tailwind v4
-
-```css
-@theme {
-  /* Colors */
-  --color-canvas-white: #ffffff;
-  --color-paper-mist: #f5f5f5;
-  --color-ash: #e5e5e5;
-  --color-smoke: #d4d4d4;
-  --color-pebble: #c8c8c8;
-  --color-midnight-ink: #0a0a0a;
-  --color-charcoal: #171717;
-  --color-graphite: #262626;
-  --color-slate: #404040;
-  --color-steel: #525252;
-  --color-fog: #737373;
-  --color-silver: #a3a3a3;
-  --color-electric-blue: #2563eb;
-  --color-deep-sapphire: #1e40af;
-  --color-soft-mint: #dcfce7;
-  --color-vivid-green: #16a34a;
-  --color-tangerine: #ea580c;
-  --color-lavender: #7c3aed;
-  --color-conic-spectrum: #8b5cf6;
-  --color-primary-action-fill: #000000;
-
-  /* Typography */
-  --font-satoshi: 'Satoshi', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  /* Typography — Scale */
-  --text-caption: 11px;
-  --leading-caption: 1.5;
-  --text-body: 14px;
-  --leading-body: 1.43;
-  --text-body-lg: 16px;
-  --leading-body-lg: 1.5;
-  --text-body-xl: 18px;
-  --leading-body-xl: 1.56;
-  --text-subheading: 20px;
-  --leading-subheading: 1.4;
-  --text-heading-sm: 24px;
-  --leading-heading-sm: 1.33;
-  --text-heading: 30px;
-  --leading-heading: 1.38;
-  --text-heading-lg: 36px;
-  --leading-heading-lg: 1.11;
-  --text-display: 48px;
-  --leading-display: 1;
-
-  /* Spacing */
-  --spacing-4: 4px;
-  --spacing-8: 8px;
-  --spacing-12: 12px;
-  --spacing-16: 16px;
-  --spacing-20: 20px;
-  --spacing-24: 24px;
-  --spacing-28: 28px;
-  --spacing-32: 32px;
-  --spacing-36: 36px;
-  --spacing-40: 40px;
-  --spacing-48: 48px;
-  --spacing-56: 56px;
-  --spacing-64: 64px;
-  --spacing-80: 80px;
-  --spacing-96: 96px;
-  --spacing-112: 112px;
-
-  /* Border Radius */
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-2xl-2: 20px;
-  --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-subtle: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
-  --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
-  --shadow-sm-2: rgba(0, 0, 0, 0.2) 0px 2px 6px 0px inset;
-  --shadow-subtle-2: rgba(0, 0, 0, 0.1) 0px 0px 0px 4px;
-  --shadow-md: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.1) 0px 4px 6px -4px;
-  --shadow-lg: rgba(0, 0, 0, 0.09) 0px 20px 20px 0px;
-  --shadow-subtle-3: rgb(255, 255, 255) 0px 0px 0px 3px, rgb(0, 0, 0) 0px 0px 0px 4px;
-}
-```
+1. **Do** keep the page background as the deepest tone — surfaces and cards always step lighter, never darker.
+2. **Do** reserve gradient cards for primary financial entities (accounts, loans, goal CTAs). Don't use gradients for transactional rows or list items — they lose emphasis when overused.
+3. **Don't** mix more than 3 different gradients in a single viewport. The vibrant gradients are accent moments, not wallpaper.
+4. **Do** color-code monetary amounts: green for inbound, red for outbound. Apply the color to both the amount text *and* the icon container's tinted background.
+5. **Don't** use pure white (#FFFFFF) for body text against the dark backgrounds — soften to `--text-secondary` (#B9BBC7) for non-primary content; reserve pure white for headings, primary actions, and on-card titles.
+6. **Do** use JetBrains Mono (or any tabular-numeral font) for amount columns and account numbers. Misaligned digits in a banking dashboard are a credibility leak.
+7. **Don't** add hard borders between dark surfaces. Separation comes from background-color steps (#040D3F → #141C4E → #1D2552), not from strokes.
+8. **Do** lean on the deep ambient glow (Card Shadow Big) only on the gradient hero cards. On every other tile, use the gentle `Tile Shadow`.
+9. **Don't** use small radii (≤4px) anywhere. The system reads as "premium fintech" because of consistent generous rounding (12px tiles, 16px cards, full-pill buttons).
+10. **Do** ensure every interactive element has a hover state — even on dark backgrounds. Brightening the surface (`--card-bg-hover`) is enough; avoid color-shifting hover states that change the meaning of the element.
+11. **Do** set 24px as the default outer page padding. Tighter feels cramped; looser breaks the grid against the right sidebar.
+12. **Don't** introduce neon or saturated accent colors outside the palette. The system's premium feel depends on disciplined use of muted greens and corals against deep navy.
