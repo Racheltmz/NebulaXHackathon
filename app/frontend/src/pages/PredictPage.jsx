@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import TrainDiagram, { carsFromRanking } from "../components/charts/TrainDiagram";
 import FileDropzone from "../components/FileDropzone";
 import FormatPanel from "../components/FormatPanel";
 import SubsystemSelector from "../components/SubsystemSelector";
@@ -136,6 +137,18 @@ export default function PredictPage() {
             <p className="preview-truncated-note">
               Each file is saved as its own run. Download predictions from the History page.
             </p>
+
+            {/* ACV localises the fault to one car, so each finished run gets a train showing
+                which car to inspect. One run is one file, so there is one train per file. */}
+            {selected?.key === "acv" &&
+              runs
+                .filter((run) => run.status === "done" && run.rows?.[0]?.ranked_cars)
+                .map((run) => (
+                  <div className="chart-card" key={run.jobId ?? run.name}>
+                    <h3 className="chart-card-header">{run.name} — cars ranked most → least likely faulty</h3>
+                    <TrainDiagram cars={carsFromRanking(run.rows[0].ranked_cars)} />
+                  </div>
+                ))}
           </div>
         )}
       </div>

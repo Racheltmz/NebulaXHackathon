@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import apiClient from "../lib/apiClient";
 import BarChart from "./charts/BarChart";
 import DoorTimeline from "./charts/DoorTimeline";
-import TrainDiagram from "./charts/TrainDiagram";
+import TrainDiagram, { carsFromRanking } from "./charts/TrainDiagram";
 import { InfoIcon } from "./icons/NavIcons";
 import StatTile from "./StatTile";
 
@@ -86,42 +86,29 @@ function DoorChart({ job }) {
 
 function AcvChart({ job, aggregate }) {
   if (aggregate) {
-    // A card per file doesn't scale past a handful of files — show how often each car was
-    // ranked most likely faulty instead, as shading on one train.
-    const topCounts = {};
-    const carIds = new Set();
-    job.rows.forEach((r) => {
-      const ranked = (r.ranked_cars || "").split("|").filter(Boolean);
-      ranked.forEach((id) => carIds.add(id));
-      if (ranked[0]) topCounts[ranked[0]] = (topCounts[ranked[0]] || 0) + 1;
-    });
-    const maxCount = Math.max(0, ...Object.values(topCounts));
-    const cars = [...carIds].map((id) => {
-      const count = topCounts[id] || 0;
-      return {
-        id,
-        intensity: maxCount > 0 ? count / maxCount : 0,
-        caption: `${count} ${count === 1 ? "file" : "files"}`,
-      };
-    });
-
+    // No chart here on purpose. Each file is its own train, and a car identifier is only
+    // meaningful within the file it came from — car 03 on one trainset has nothing to do with
+    // car 03 on another — so counts or rankings pooled across files would be misleading. The
+    // ranking per file is in the table below, and the train diagram belongs to a single
+    // prediction (Predict page and run dashboard).
     return (
       <>
         <UnderstandingCard {...UNDERSTANDING.acv} />
         <div className="stat-tiles">
           <StatTile label="Files Analysed" value={job.rows.length} />
         </div>
-        <div className="chart-card">
-          <h3>Cars ranked most likely faulty (number of files)</h3>
-          <TrainDiagram cars={cars} />
-        </div>
+        <p className="history-dashboard-note">
+          Each file is a separate trainset, so car rankings aren&apos;t comparable between files and
+          aren&apos;t summarised here. See each file&apos;s ranking in the table below, or open a run
+          for its train diagram.
+        </p>
       </>
     );
   }
 
   const byFile = {};
   job.rows.forEach((r) => {
-    byFile[r.file_id] = (r.ranked_cars || "").split("|").filter(Boolean);
+    byFile[r.file_id] = r.ranked_cars || "";
   });
 
   return (
@@ -129,18 +116,15 @@ function AcvChart({ job, aggregate }) {
       <UnderstandingCard {...UNDERSTANDING.acv} />
       <div className="stat-tiles">
         <StatTile label="Files Analysed" value={job.rows.length} />
-        <StatTile label="Most likely faulty (first file)" value={Object.values(byFile)[0]?.[0] ?? "—"} />
+        <StatTile
+          label="Most likely faulty (first file)"
+          value={carsFromRanking(Object.values(byFile)[0])[0]?.id ?? "—"}
+        />
       </div>
-      {Object.entries(byFile).map(([fileId, cars]) => (
+      {Object.entries(byFile).map(([fileId, ranked]) => (
         <div className="chart-card" key={fileId}>
           <h3>{fileId} — cars ranked most → least likely faulty</h3>
-          <TrainDiagram
-            cars={cars.map((id, i) => ({
-              id,
-              intensity: cars.length > 1 ? (cars.length - 1 - i) / (cars.length - 1) : 1,
-              caption: `#${i + 1}`,
-            }))}
-          />
+          <TrainDiagram cars={carsFromRanking(ranked)} />
         </div>
       ))}
     </>
