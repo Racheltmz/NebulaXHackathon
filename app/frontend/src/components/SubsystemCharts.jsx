@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import apiClient from "../lib/apiClient";
 import BarChart from "./charts/BarChart";
 import DoorTimeline from "./charts/DoorTimeline";
+import TrainDiagram from "./charts/TrainDiagram";
 import { InfoIcon } from "./icons/NavIcons";
 import StatTile from "./StatTile";
 
@@ -10,11 +11,66 @@ import StatTile from "./StatTile";
  * run dashboard, or (with `aggregate`) the latest prediction for every file of that subsystem
  * on the History page. */
 
+// The "Understanding ..." card at the top of each dashboard: how to read that subsystem's output.
+const UNDERSTANDING = {
+  door: {
+    title: "Understanding door segments",
+    points: [
+      "Each segment is one door open or close cycle found in a continuous stream of door controller data, with its start and end time.",
+      "Normal means the door moved freely. Abnormal resistance means the motor met extra resistance, for example from a foreign object in the slide rail, a jammed rubber strip or a deformed door leaf.",
+      "Repeated abnormal cycles can lead to door jamming and motor overload, so that door should be inspected.",
+    ],
+  },
+  acv: {
+    title: "Understanding car rankings",
+    points: [
+      "Each file is one air conditioning case in which exactly one of the cars has a refrigerant leak.",
+      "Cars are ranked from most to least likely to be the leaking car, so the first car listed is the best guess.",
+      "Inspect the top ranked car first, then move down the ranking if it is clear.",
+    ],
+  },
+  rail_corrugation: {
+    title: "Understanding corrugation classes",
+    points: [
+      "Each file is a 1 second recording of axle box vibration and shock, classified as Normal, Side I or Side II.",
+      "Normal means both rails are healthy. Side I or Side II means corrugation (wave like wear) on that side's rail while the other side is normal.",
+      "A Side I or Side II result means that side of the track should be inspected.",
+    ],
+  },
+  shm: {
+    title: "Understanding cumulative damage",
+    points: [
+      "This value comes from Miner's linear cumulative damage rule applied to rstress cycles from the uploaded signal.",
+      "It ranges from 0 (no accumulated fatigue damage) up to 1.0 (the point at which fatigue failure is expected).",
+      "The higher the value, the more of the component's fatigue life has already been used up, and the component should be inspected.",
+    ],
+  },
+};
+
+function UnderstandingCard({ title, points }) {
+  return (
+    <div className="chart-card">
+      <h3 className="title-with-icon">
+        <span className="icon-tile">
+          <InfoIcon />
+        </span>
+        {title}
+      </h3>
+      <ul>
+        {points.map((point) => (
+          <li key={point}>{point}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function DoorChart({ job }) {
   const normal = job.rows.filter((r) => r.label !== "Abnormal resistance").length;
   const abnormal = job.rows.length - normal;
   return (
     <>
+      <UnderstandingCard {...UNDERSTANDING.door} />
       <div className="stat-tiles">
         <StatTile label="Segments detected" value={job.rows.length} />
         <StatTile label="Normal" value={normal} />
@@ -30,25 +86,34 @@ function DoorChart({ job }) {
 
 function AcvChart({ job, aggregate }) {
   if (aggregate) {
-    // A card per file doesn't scale past a handful of files — chart how often each car was
-    // ranked most likely faulty instead.
+    // A card per file doesn't scale past a handful of files — show how often each car was
+    // ranked most likely faulty instead, as shading on one train.
     const topCounts = {};
+    const carIds = new Set();
     job.rows.forEach((r) => {
-      const top = (r.ranked_cars || "").split("|").filter(Boolean)[0];
-      if (top) topCounts[top] = (topCounts[top] || 0) + 1;
+      const ranked = (r.ranked_cars || "").split("|").filter(Boolean);
+      ranked.forEach((id) => carIds.add(id));
+      if (ranked[0]) topCounts[ranked[0]] = (topCounts[ranked[0]] || 0) + 1;
     });
-    const data = Object.entries(topCounts)
-      .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-      .map(([car, value]) => ({ label: car, value }));
+    const maxCount = Math.max(0, ...Object.values(topCounts));
+    const cars = [...carIds].map((id) => {
+      const count = topCounts[id] || 0;
+      return {
+        id,
+        intensity: maxCount > 0 ? count / maxCount : 0,
+        caption: `${count} ${count === 1 ? "file" : "files"}`,
+      };
+    });
 
     return (
       <>
+        <UnderstandingCard {...UNDERSTANDING.acv} />
         <div className="stat-tiles">
-          <StatTile label="Files analysed" value={job.rows.length} />
+          <StatTile label="Files Analysed" value={job.rows.length} />
         </div>
         <div className="chart-card">
           <h3>Cars ranked most likely faulty (number of files)</h3>
-          <BarChart data={data} barColor="var(--fe-cobalt)" />
+          <TrainDiagram cars={cars} />
         </div>
       </>
     );
@@ -61,16 +126,20 @@ function AcvChart({ job, aggregate }) {
 
   return (
     <>
+      <UnderstandingCard {...UNDERSTANDING.acv} />
       <div className="stat-tiles">
-        <StatTile label="Files analysed" value={job.rows.length} />
+        <StatTile label="Files Analysed" value={job.rows.length} />
         <StatTile label="Most likely faulty (first file)" value={Object.values(byFile)[0]?.[0] ?? "—"} />
       </div>
       {Object.entries(byFile).map(([fileId, cars]) => (
         <div className="chart-card" key={fileId}>
           <h3>{fileId} — cars ranked most → least likely faulty</h3>
-          <BarChart
-            data={cars.map((car, i) => ({ label: car, value: cars.length - i }))}
-            barColor="var(--fe-cobalt)"
+          <TrainDiagram
+            cars={cars.map((id, i) => ({
+              id,
+              intensity: cars.length > 1 ? (cars.length - 1 - i) / (cars.length - 1) : 1,
+              caption: `#${i + 1}`,
+            }))}
           />
         </div>
       ))}
@@ -86,6 +155,7 @@ function RailChart({ job }) {
 
   return (
     <>
+      <UnderstandingCard {...UNDERSTANDING.rail_corrugation} />
       <div className="stat-tiles">
         {Object.entries(counts).map(([label, value]) => (
           <StatTile key={label} label={label} value={value} />
@@ -177,22 +247,7 @@ function ShmChart({ job, aggregate }) {
 
   return (
     <>
-      <div className="chart-card">
-        <h3 className="title-with-icon">
-          <span className="icon-tile">
-            <InfoIcon />
-          </span>
-          Understanding cumulative damage
-        </h3>
-        <ul>
-          <li>This value comes from Miner's linear cumulative damage rule applied to
-          rstress cycles from the uploaded signal.</li>
-          <li>It ranges from 0 (no accumulated fatigue damage) up to 1.0 (the point at which fatigue failure is
-          expected).</li>
-          <li>The higher the value, the more of the component's fatigue life has
-          already been used up, and the component should be inspected.</li>
-        </ul>
-      </div>
+      <UnderstandingCard {...UNDERSTANDING.shm} />
 
       <div className="shm-hero-row">
         <div className="chart-card shm-hero-card">
@@ -214,7 +269,7 @@ function ShmChart({ job, aggregate }) {
 
         <div className="chart-card shm-hero-card">
           <div className="shm-hero-value">{job.rows.length}</div>
-          <div className="shm-hero-label">Number of Records</div>
+          <div className="shm-hero-label">Files Analysed</div>
         </div>
       </div>
 
