@@ -22,10 +22,12 @@ Tasked to predict **four independent subsystems** of a rail vehicle and develop 
 
 We used React for our frontend, FastAPI for our backend, Supabase for record and file storage. Our app is deployed on Google Cloud Run and can be accessed through https://frontend-205373376635.us-central1.run.app/
 
+```mermaid
 graph LR
     A[React Frontend] --> B[FastAPI Backend]
     B --> C[ML Models]
     B --> D[(Supabase)]
+```
 
 ## Model Performance
 
