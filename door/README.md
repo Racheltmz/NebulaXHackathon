@@ -7,7 +7,7 @@ fitted, and a driver that trains on **all** labelled data and writes `door_predi
 |---|---|
 | **Task** | find every door open/close cycle in a continuous stream, label it `Normal` or `Abnormal resistance` |
 | **Official metric** | IoU-weighted F1 of predicted vs true segments (timing and label) |
-| **Public-test score** (no-retraining zip) | **0.9474** (equal to 2 of the 38 segments wrong, if every segment boundary matches the reference) |
+| **Public-test score** | **0.9474** (equal to 2 of the 38 segments wrong, if every segment boundary matches the reference) |
 | **Cross-validated** | 1.000 (3-fold, 5-fold, train/test, and all-data 5-fold); the majority-class baseline scores 0.727 |
 | **Model** | scaled RBF-SVM on 679 hand-built per-segment statistics |
 | **Evolution** | 610 OpenEvolve iterations (on the mis-segmented data, see below) + 1 on the corrected data |
@@ -63,18 +63,6 @@ position). `Train_Segments_Answer.csv` gives the 110 true cycles (80 Normal, 30 
     corrected data. That does not beat 1.000, so the classical model is used.
   * *Earlier work* on the same task reported ~0.98 balanced accuracy, but its segment boundaries did not match the labelled ones (only 1 of 110 start times agreed).
 
-## Hard-label retraining (the "with" zip)
-
-Confidence = agreement among 10 copies fitted on 80% subsamples; only items at or above the cutoff are pseudo-labelled. The cutoff
-was tuned on the labelled data with 3-fold CV (each fold plays the unlabelled set):
-
-| no retraining | all items | 0.6 | 0.7 | 0.8 | 0.9 | **1.0** |
-|---:|---:|---:|---:|---:|---:|---:|
-| 0.9818 | 0.9818 | 0.9909 | 1.0000 | 1.0000 | 1.0000 | **1.0000** |
-
-The gain appears because each fold trains on only 2/3 of the data; on the real run (all 110 rows) the model already makes no
-cross-validation errors. On the real test stream it pseudo-labels 37 of 38 cycles and changes **0** labels.
-
 ## What we do not know
 
 The 1.000 cross-validation score is at odds with the public score of 0.947 (two of 38 cycles wrong). Both training and test are single
@@ -84,7 +72,6 @@ not been diagnosed. There are only 30 abnormal training cycles.
 ## Reproduce
 
 ```bash
-python door_model.py --data-root <02_Datasets> --out out/
-# out/no_hard_label_retraining/door_predictions.csv  and  out/with_hard_label_retraining/door_predictions.csv
+python door_model.py --data-root <02_Datasets> --out out/     # writes out/door_predictions.csv
 ```
-Both files are byte-identical to the ones in the submitted zips.
+The output is byte-identical to the Door file in the submitted zip.

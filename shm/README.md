@@ -7,7 +7,7 @@ exact OpenEvolve program that was fitted, and a driver that trains on **all** 64
 |---|---|
 | **Task** | predict one cumulative-damage number for each dynamic-stress trace |
 | **Official metric** | `max(0, 1 − MAPE)` — *relative* error, so small damages matter as much as large ones |
-| **Public-test score** (no-retraining zip) | **0.9322** |
+| **Public-test score** | **0.9322** |
 | **Cross-validated** | 0.924 (5-fold, pooled over all 64 traces); 0.940 combined score in the evolution protocol |
 | **Model** | log-target kernel / SVR / ridge blend on 838 descriptors + a clipped residual calibrator |
 | **Evolution** | 160 OpenEvolve iterations kept (158 attempted) on top of a seed program; the program used was found at iteration 41 |
@@ -65,17 +65,6 @@ ten log amplitude / roughness covariates and the log prediction. At prediction t
   * evolution moved the seed from 0.930 to 0.940 combined; the final program was chosen on all-data 5-fold score, where several
     evolved programs tie at 0.924.
 
-## Hard-label retraining (the "with" zip)
-
-Pseudo-label the held-out traces whose 10 subsampled copies are *most consistent* (the cutoff is the fraction kept), retrain, predict
-again. Tuned on the labelled data with 3-fold CV:
-
-| no retraining | keep 100% | 75% | **50%** | 25% |
-|---:|---:|---:|---:|---:|
-| 0.9226 | 0.9272 | 0.9285 | **0.9297** | 0.9161 |
-
-On the real test set it pseudo-labels 8 of 16 traces and moves predictions by 2% on average (max ~10%).
-
 ## What we do not know
 
 The descriptors come from an earlier effort that designed them by looking at all 64 traces, so 0.924 is optimistic; the public score is 0.932.
@@ -86,6 +75,4 @@ With 64 traces, differences of a few thousandths between programs are noise.
 ```bash
 python shm_model.py --data-root <02_Datasets> --out out/ --jobs 4     # ~10 min: recomputes the features from the raw files
 ```
-The no-retraining output matches the submitted CSV to about 5×10⁻⁸ relative (float rounding in the recomputed features). The
-with-retraining output can differ by up to ~3% on one or two traces: retraining keeps the "most consistent half", and that ranking is
-sensitive to feature noise of that size, so the boundary traces can swap.
+The output matches the SHM file in the submitted zip to about 5×10⁻⁸ relative (float rounding in the recomputed features).

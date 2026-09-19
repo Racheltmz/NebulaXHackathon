@@ -8,7 +8,7 @@ recordings), the exact OpenEvolve program that was fitted, and a driver that tra
 |---|---|
 | **Task** | classify each 1-second, 128-channel axle-box recording as `Normal`, `Side I` or `Side II` corrugation |
 | **Official metric** | **macro-F1** over the three classes (not accuracy — rare classes count equally) |
-| **Public-test score** (no-retraining zip) | **0.8080** macro-F1 |
+| **Public-test score** | **0.8080** macro-F1 |
 | **Cross-validated** | 0.852 macro-F1 (5-fold, pooled over all 272 recordings); 0.857 combined score in the evolution protocol (cv3 0.837, cv5 0.788, train/test 0.876) |
 | **Model** | six regularised views over 415 label-free descriptors + a tachometer-phase view, with a cross-validated decision-bias search |
 | **Evolution** | 100 OpenEvolve iterations kept (118 attempted) on top of a seed program; the program used was found at iteration 84 |
@@ -74,19 +74,6 @@ repeats of stratified inner cross-validation, maximising **macro-F1** (then bala
     a different third of the normals" scheme was the weakest (0.796 vs 0.828).
 * **Evolution**: 100 iterations moved the seed's 0.814 combined score to a best of 0.861 (evolution protocol); the program used scores 0.857 there and 0.852 on the all-data estimate.
 
-## Hard-label retraining (the "with" zip)
-
-Pseudo-label only held-out recordings on which at least the cutoff fraction of 10 subsampled copies agree, retrain, predict again.
-Tuned on the labelled data with 3-fold CV:
-
-| no retraining | all | **0.6** | 0.7 | 0.8 | 0.9 | 1.0 |
-|---:|---:|---:|---:|---:|---:|---:|
-| 0.8518 | 0.8581 | **0.8637** | 0.8625 | 0.8345 | 0.8291 | 0.8568 |
-
-The curve is not monotonic (0.8 and 0.9 are *worse* than not retraining), so the +0.012 at 0.6 is fragile. On the real test set it
-pseudo-labels 66 of 68 recordings and changes one label (`Test13.csv`, Normal → Side I). A separate re-measurement on the final
-program found retraining neutral to slightly negative (−0.002).
-
 ## What we do not know
 
 The descriptors and design come from an earlier effort that tuned them with cross-validation over all 272 recordings, so 0.852 is an
@@ -98,4 +85,4 @@ recording moves macro-F1 by several points.
 ```bash
 python rail_model.py --data-root <02_Datasets> --out out/ --jobs 4     # ~10 min: recomputes the features from the raw files
 ```
-Both output files are byte-identical to the ones in the submitted zips.
+The output is byte-identical to the Rail file in the submitted zip.

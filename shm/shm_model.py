@@ -8,13 +8,10 @@ blend followed by a clipped residual calibrator (scored by 1 - MAPE).
 Usage
     python shm_model.py --data-root <path to the organisers' 02_Datasets folder> --out <output folder> [--jobs N]
 
-Writes (organiser format, ready to zip):
-    <out>/no_hard_label_retraining/shm_predictions.csv    model fitted on ALL labelled data, predicting the held-out set
-    <out>/with_hard_label_retraining/shm_predictions.csv  the same model retrained on all labelled data + the confident held-out
-                                            items (hard pseudo-labels, cutoff tuned on the labelled data)
+Writes <out>/shm_predictions.csv in the organiser format: the model is fitted on ALL labelled data and predicts the held-out set.
 
 Requirements (versions the submitted predictions were produced with):
-    python 3.12, numpy 1.26.4, scipy 1.13.1, scikit-learn 1.5.2, pandas 2.2.3, joblib
+    python 3.12, numpy 1.26.4, scipy 1.13.1, scikit-learn 1.5.2, pandas 2.2.3, joblib, openpyxl (ACV)
 """
 from __future__ import annotations
 
@@ -205,7 +202,7 @@ def write_csv(folder, ids, pred):
 
 
 # =============================================================================
-# 2. MODEL: the OpenEvolve program exactly as it was fitted for the submissions (unmodified)
+# 2. MODEL: the OpenEvolve program exactly as it was fitted for the submission (unmodified)
 # =============================================================================
 import warnings
 from typing import Sequence
@@ -314,76 +311,21 @@ class Model:
 
 
 # =============================================================================
-# 3. HARD-LABEL RETRAINING (second output)
+# 3. DRIVER: fit on ALL labelled data, predict the held-out set, write the CSV
 # =============================================================================
-# Confidence = member agreement: N_COPIES copies of the model, each fitted on a stratified 80% subsample of the labelled
-# traces, predict the held-out traces; a trace's confidence is the consistency (1 / spread of log-predictions) of the
-# copies.  The RETRAIN_CUTOFF fraction of most-consistent traces is pseudo-labelled with the main model's predicted damage,
-# the model is refitted on labelled + pseudo-labelled traces and predicts all held-out traces again.  The cutoff (keep the
-# most consistent half) was tuned by 3-fold CV on the labelled data.
-RETRAIN_CUTOFF = 0.5
-N_COPIES = 10
-COPY_SEED = 7
-_FLAG_THR = None     # "flagged" = high-damage traces (top quartile of the labelled damage values), set in main()
-
-
-def _is_flagged(y):
-    return np.asarray(y, dtype=float) >= _FLAG_THR
-
-
-def _subsample_indices(y, rng):
-    flag = _is_flagged(y)
-    pos, neg = np.flatnonzero(flag), np.flatnonzero(~flag)
-    kp, kn = max(1, int(round(len(pos) * 0.8))), max(1, int(round(len(neg) * 0.8)))
-    return [np.sort(np.concatenate([rng.choice(pos, kp, replace=False), rng.choice(neg, kn, replace=False)]))
-            for _ in range(5)]
-
-
-def _copies(X_lab, y, X_test):
-    rng = np.random.default_rng(COPY_SEED)
-    subsets = []
-    while len(subsets) < N_COPIES:
-        subsets += _subsample_indices(y, rng)
-    outs = []
-    for s in subsets[:N_COPIES]:
-        m = Model()
-        m.fit([X_lab[i] for i in s], y[s])
-        outs.append(np.asarray(m.predict(X_test)))
-    return outs
-
-
-def _retrain_reg(X_lab, y, X_test, stage1, copies):
-    conf = -np.log(np.maximum(np.asarray(copies, dtype=float), 1e-6)).std(axis=0)
-    k = max(1, int(round(len(conf) * RETRAIN_CUTOFF)))
-    chosen = np.argsort(-conf)[:k]
-    m = Model()
-    m.fit(list(X_lab) + [X_test[i] for i in chosen], np.concatenate([y, stage1[chosen]]))
-    return np.exp(np.log(np.maximum(np.asarray(m.predict(X_test), dtype=float), 1e-6))), chosen
-
-
-# =============================================================================
-# 4. DRIVER: fit on ALL labelled data, predict the held-out set, write both variants
-# =============================================================================
-
 def main():
-    global _FLAG_THR
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--data-root", required=True, help="the organisers' 02_Datasets folder")
     ap.add_argument("--out", default="predictions")
     ap.add_argument("--jobs", type=int, default=4, help="parallel workers for feature extraction")
     a = ap.parse_args()
-    out = Path(a.out)
     X_lab, y, X_test, ids = load_data(a.data_root, a.jobs)
-    _FLAG_THR = float(np.quantile(y, 0.75))
-    print(f"{len(X_lab)} labelled traces (all used), {len(X_test)} held-out traces")
+    print(f"{len(X_lab)} labelled rows (all used), {len(X_test)} held-out items")
     model = Model()
     model.fit(X_lab, y)
-    stage1 = np.exp(np.log(np.maximum(np.asarray(model.predict(X_test), dtype=float), 1e-6)))
-    write_csv(out / "no_hard_label_retraining", ids, stage1)
-    final, chosen = _retrain_reg(X_lab, y, X_test, stage1, _copies(X_lab, y, X_test))
-    write_csv(out / "with_hard_label_retraining", ids, final)
-    print(f"hard-label retraining: {len(chosen)}/{len(X_test)} traces pseudo-labelled (keep fraction {RETRAIN_CUTOFF}); "
-          f"mean |relative change| {np.mean(np.abs(final - stage1) / stage1) * 100:.2f}%")
+    pred = np.exp(np.log(np.maximum(np.asarray(model.predict(X_test), dtype=float), 1e-6)))
+    write_csv(a.out, ids, pred)
+    print("wrote", Path(a.out) / "shm_predictions.csv")
 
 
 if __name__ == "__main__":

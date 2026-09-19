@@ -7,13 +7,10 @@ ranker over per-signal descriptors that are centred on the median of the car's o
 Usage
     python acv_model.py --data-root <path to the organisers' 02_Datasets folder> --out <output folder> [--jobs N]
 
-Writes (organiser format, ready to zip):
-    <out>/no_hard_label_retraining/acv_predictions.csv    model fitted on ALL labelled data, predicting the held-out set
-    <out>/with_hard_label_retraining/acv_predictions.csv  the same model retrained on all labelled data + the confident held-out
-                                            items (hard pseudo-labels, cutoff tuned on the labelled data)
+Writes <out>/acv_predictions.csv in the organiser format: the model is fitted on ALL labelled data and predicts the held-out set.
 
 Requirements (versions the submitted predictions were produced with):
-    python 3.12, numpy 1.26.4, scipy 1.13.1, scikit-learn 1.5.2, pandas 2.2.3, joblib
+    python 3.12, numpy 1.26.4, scipy 1.13.1, scikit-learn 1.5.2, pandas 2.2.3, joblib, openpyxl (ACV)
 """
 from __future__ import annotations
 
@@ -102,7 +99,7 @@ def write_csv(folder, ids, scores):
 
 
 # =============================================================================
-# 2. MODEL: the OpenEvolve program exactly as it was fitted for the submissions (unmodified)
+# 2. MODEL: the OpenEvolve program exactly as it was fitted for the submission (unmodified)
 # =============================================================================
 import warnings
 from typing import Sequence
@@ -148,84 +145,21 @@ class Model:
 
 
 # =============================================================================
-# 3. HARD-LABEL RETRAINING (second output)
+# 3. DRIVER: fit on ALL labelled data, predict the held-out set, write the CSV
 # =============================================================================
-# Confidence = member agreement: N_COPIES copies of the model, each fitted on a stratified 80% subsample of the
-# labelled rows, predict the held-out set; an item's confidence is the fraction of copies that agree with the main
-# model's prediction (a cutoff of 0.9 is the "p >= 0.9 or <= 0.1" band).  Only items at/above RETRAIN_CUTOFF are
-# pseudo-labelled with the main model's prediction; the model is refitted on labelled + pseudo-labelled rows and
-# predicts the whole held-out set again.  The cutoff was tuned by 3-fold CV on the labelled data.
-RETRAIN_CUTOFF = 1.0
-N_COPIES = 10
-COPY_SEED = 7
-
-
-def _is_flagged(y):
-    return np.asarray(y) == 1
-
-
-def _subsample_indices(y, rng):
-    flag = _is_flagged(y)
-    pos, neg = np.flatnonzero(flag), np.flatnonzero(~flag)
-    kp, kn = max(1, int(round(len(pos) * 0.8))), max(1, int(round(len(neg) * 0.8)))
-    return [np.sort(np.concatenate([rng.choice(pos, kp, replace=False), rng.choice(neg, kn, replace=False)]))
-            for _ in range(5)]
-
-
-def _copies(X_lab, y, X_test):
-    rng = np.random.default_rng(COPY_SEED)
-    subsets = []
-    while len(subsets) < N_COPIES:
-        subsets += _subsample_indices(y, rng)
-    outs = []
-    for s in subsets[:N_COPIES]:
-        m = Model()
-        m.fit([X_lab[i] for i in s], y[s])
-        outs.append(np.asarray(m.predict(X_test)))
-    return outs
-
-
-def _retrain_rank(X_lab, y, X_test, stage1, copies, groups_test):
-    """Confidence of a case = fraction of copies whose top-ranked car equals the main model's top-ranked car;
-    a confident case is pseudo-labelled as a whole (top car = faulty, the others = healthy)."""
-    stage1 = np.asarray(stage1, dtype=float)
-    conf = np.zeros(len(stage1))
-    pseudo = np.zeros(len(stage1), dtype=int)
-    for g in np.unique(groups_test):
-        idx = np.flatnonzero(groups_test == g)
-        top = idx[np.argmax(stage1[idx])]
-        pseudo[top] = 1
-        conf[idx] = np.mean([idx[np.argmax(np.asarray(o, dtype=float)[idx])] == top for o in copies])
-    chosen = np.flatnonzero(conf >= RETRAIN_CUTOFF - 1e-12)
-    if len(chosen) == 0:
-        return stage1, chosen
-    rows = np.flatnonzero(np.isin(groups_test, np.unique(groups_test[chosen])))
-    m = Model()
-    m.fit(list(X_lab) + [X_test[i] for i in rows], np.concatenate([y, pseudo[rows]]))
-    return np.asarray(m.predict(X_test), dtype=float), chosen
-
-
-# =============================================================================
-# 4. DRIVER: fit on ALL labelled data, predict the held-out set, write both variants
-# =============================================================================
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--data-root", required=True, help="the organisers' 02_Datasets folder")
     ap.add_argument("--out", default="predictions")
-    ap.add_argument("--jobs", type=int, default=1, help="unused (kept for a uniform command line)")
+    ap.add_argument("--jobs", type=int, default=1, help="parallel workers for feature extraction")
     a = ap.parse_args()
-    out = Path(a.out)
     X_lab, y, X_test, ids = load_data(a.data_root)
-    groups_test = np.array([sorted({f for f, _ in ids}).index(f) for f, _ in ids])
-    print(f"{len(X_lab)} labelled cars (all used), {len(X_test)} held-out cars")
+    print(f"{len(X_lab)} labelled rows (all used), {len(X_test)} held-out items")
     model = Model()
     model.fit(X_lab, y)
-    stage1 = np.asarray(model.predict(X_test), dtype=float)
-    write_csv(out / "no_hard_label_retraining", ids, stage1)
-    final, chosen = _retrain_rank(X_lab, y, X_test, stage1, _copies(X_lab, y, X_test), groups_test)
-    write_csv(out / "with_hard_label_retraining", ids, final)
-    print(f"hard-label retraining: {len(chosen)}/{len(X_test)} cars in confident cases (cutoff {RETRAIN_CUTOFF})")
+    pred = np.asarray(model.predict(X_test), dtype=float)
+    write_csv(a.out, ids, pred)
+    print("wrote", Path(a.out) / "acv_predictions.csv")
 
 
 if __name__ == "__main__":

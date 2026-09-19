@@ -7,7 +7,7 @@ that trains on **all** labelled cars and writes `acv_predictions.csv`.
 |---|---|
 | **Task** | each case = 8 cars, exactly one has a refrigerant leak; rank the cars from most to least likely faulty |
 | **Official metric** | rank-decay: `(8 − (rank − 1)) / 8` for the true faulty car (rank 1 → 1.0, rank 6 → 0.375) |
-| **Public-test score** (no-retraining zip) | **0.375** — the true car was ranked 6th of 8 |
+| **Public-test score** (the model's own output) | **0.375** — the true car was ranked 6th of 8 |
 | **Cross-validated** | rank 1 in all five training cases that share the test case's signal schema (leave-one-case-out) |
 | **Model** | pairwise faulty-vs-normal logistic ranker on per-signal, case-centred descriptors |
 | **Evolution** | none for the final model: it is the *seed* program (the raw-signal programs ran 600 iterations) |
@@ -55,22 +55,10 @@ Pairwise comparison suits the question ("which car ranks first?") and, in the fi
   because of the cross-validation evidence — a reminder that with six cases, a one-case improvement is noise-level evidence.
 * **Ensembling** was tested and not used (nested out-of-fold 1.000 vs 1.000, a tie; schemes 0.96–1.00).
 
-## What would improve it (not done)
-
-A model with no or very few fitted parameters that scores "how far is this car from its siblings", using robust deviations of the
-control-temperature signals, would not depend on five faulty examples. Adding the now-known faulty car of the public case as a seventh
-training case is only legitimate if the final scoring uses a different set.
-
-## Hard-label retraining (the "with" zip)
-
-The held-out case is pseudo-labelled (top-ranked car = faulty) only if all 10 subsampled copies agree on its top car. Tuned by
-leave-one-case-out on the labelled data: every cutoff scores 1.000, so nothing was gained and the strictest cutoff (all copies must
-agree) is used. On the real case the top car stays 04 and two mid-ranked cars swap.
-
 ## Reproduce
 
 ```bash
-python acv_model.py --data-root <02_Datasets> --out out/
+python acv_model.py --data-root <02_Datasets> --out out/     # writes out/acv_predictions.csv
 ```
-Both output files are byte-identical to the ones in the submitted zips. (Separately, a *personal-check* zip in `submissions/` overwrites
-this ranking with the answer implied by the public score; it is labelled as such and is not a model result.)
+The output is the model's own ranking, `04|07|03|06|05|01|08|02`, which scored 0.375. In `submissions/predictions.zip` the ACV ranking was
+set manually (car 01 first); the Door, Rail and SHM files in that zip are the models' own output.

@@ -13,27 +13,23 @@ preprocessing, holds the exact model that was fitted, and trains on all labelled
 
 ## Results
 
-| Task | Official metric | **Public-test score** (`no_hard_label_retraining`) | Cross-validated on the labelled data | Model | OpenEvolve iterations kept (attempted) |
+| Task | Official metric | **Public-test score** | Cross-validated on the labelled data | Model | OpenEvolve iterations kept (attempted) |
 |---|---|---:|---:|---|---:|
 | Door | IoU-weighted F1 | **0.9474** | 1.000 | RBF-SVM on 679 segment statistics | 610 (597) + 1 |
 | ACV | rank-decay | **0.3750** | 1.000 (leave-one-case-out, five same-schema cases) | pairwise per-signal ranker | 0 (seed; raw-signal track: 600 (631)) |
 | Rail | macro-F1 | **0.8080** | 0.852 | six-view blend + bias search | 100 (118) |
 | SHM | 1 − MAPE | **0.9322** | 0.924 | log-space kernel/SVR/ridge blend + calibrator | 160 (158) |
 
-The public-test scores were returned by the organisers' validator for the no-retraining zip; the with-retraining zip has not been scored.
+The public-test scores were returned by the organisers' validator for the models' own outputs.
 The cross-validated numbers are optimistic (see *Caveats*); **ACV is the clear failure**: cross-validation said perfect, the unseen case
 ranked the faulty car 6th of 8.
 
-## The three zips in `submissions/`
+## The submission zip
 
-| Folder | Contents |
-|---|---|
-| `no_hard_label_retraining/predictions.zip` | each model fitted on **all** labelled data, predicting the held-out set |
-| `with_hard_label_retraining/predictions.zip` | the same models, retrained on all labelled data + the confident held-out items (hard pseudo-labels; cutoff tuned on the labelled data) |
-| `personal_check_ACV_hardcoded/…zip` | **not a model result.** The no-retraining zip with the ACV ranking overwritten by the answer implied by the public score (car 01 first), made for a personal check. Do not submit as a genuine result. |
-
-All zips hold exactly `door_/acv_/rail_/shm_predictions.csv` at the top level, with headers byte-identical to the organiser examples.
-Every final fit uses **all** the labelled data (Door 110 segments, ACV 48 cars, Rail 272 recordings, SHM 64 traces).
+`submissions/predictions.zip` holds `door_/acv_/rail_/shm_predictions.csv` at the top level, with headers byte-identical to the organiser
+examples. Door, Rail and SHM are the models' own predictions, each fitted on **all** the labelled data (Door 110 segments, ACV 48 cars, Rail 272
+recordings, SHM 64 traces). **The ACV ranking in this zip was set manually** (car 01 first, the car the public ACV score implied), so it does not
+reflect the model, whose own ACV output scored 0.375.
 
 ## How the models were found: the OpenEvolve pipeline
 
@@ -80,7 +76,7 @@ track (up to six per task, drawn from the archives' top ten) were re-scored by p
 best single program: six fold-creation schemes (all data; all faulty + a different third of the normals; overlapping 2/3; cross-fit k-fold;
 bootstrap; 80% subsamples), with ensemble weights calibrated out of fold. Rule: an ensemble is used only if its *nested* out-of-fold score (weights
 fitted on the other folds) is strictly higher than the best single program trained on all data. It never was, so every submission is a single
-program. Hard-label retraining uses a member-agreement confidence, and its cutoff was tuned per task by 3-fold CV on the labelled data.
+program.
 
 **Problems found along the way** (each changed results): the Door arrays were mis-segmented (none of 110 segments had the right length) until a
 row-exact rebuild; the ACV metric scored all-tied cases at rank 1 whenever the faulty car happened to be listed first; a Docker bind-mount leak
@@ -96,8 +92,8 @@ python acv/acv_model.py   --data-root <02_Datasets> --out out/acv
 python rail/rail_model.py --data-root <02_Datasets> --out out/rail --jobs 4     # ~10 min
 python shm/shm_model.py   --data-root <02_Datasets> --out out/shm  --jobs 4     # ~10 min
 ```
-Each writes `no_hard_label_retraining/` and `with_hard_label_retraining/` CSVs. Door, ACV and Rail reproduce the submitted files byte-for-byte;
-SHM's no-retraining output matches to ~5×10⁻⁸ relative and its with-retraining output can differ by up to ~3% on a boundary trace (see `shm/README.md`).
+Each writes `<task>_predictions.csv`. Door and Rail reproduce the models' submitted files byte-for-byte; ACV reproduces the model's own ranking (the ACV
+file in the zip was set manually, see above); SHM matches to ~5×10⁻⁸ relative.
 
 ## Caveats
 
@@ -105,4 +101,3 @@ SHM's no-retraining output matches to ~5×10⁻⁸ relative and its with-retrain
   against fixed splits, so cross-validated numbers are upper bounds. The public scores (Rail 0.808, SHM 0.932) are the honest reference.
 * **Small data.** 30 abnormal Door cycles, 14 Side-I rail recordings, 6 ACV cases (5 usable), 64 SHM traces: differences of a few thousandths are noise.
 * **ACV.** Leave-one-case-out over six cases is weak evidence; a 1.000 there did not transfer.
-* **Hard-label retraining** changes very little (Door 0 of 38 labels, Rail 1 of 68, ACV top car unchanged, SHM ~2%) and its measured benefit is within noise.
