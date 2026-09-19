@@ -2,6 +2,8 @@
 
 ## Problem Statement 3: Predictive Fault Detection
 
+Team Name: dingdong
+
 Tasked to predict **four independent subsystems** of a rail vehicle and develop a user-friendly interface for engineers and operational users to interpret the results.
 
 ## Features
