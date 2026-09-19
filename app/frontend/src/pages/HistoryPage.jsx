@@ -19,6 +19,68 @@ const SEVERITY_LABELS = { normal: "Normal", elevated: "Elevated", critical: "Cri
 const SEVERITY_BADGE = { normal: "normal", elevated: "elevated", critical: "abnormal" };
 const SEVERITY_RANK = { normal: 0, elevated: 1, critical: 2 };
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE = 25;
+
+/** Prev/next + page-size control shown under a table. `total` is the row count before slicing. */
+function Pager({ page, pageSize, total, onPageChange, onPageSizeChange, noun = "records" }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (total === 0) return null;
+  return (
+    <div className="pager">
+      <button
+        className="pager-arrow"
+        type="button"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page <= 1}
+        aria-label="Previous page"
+      >
+        ←
+      </button>
+      <span className="pager-label">
+        Page
+        <input
+          className="pager-page-input"
+          type="number"
+          min={1}
+          max={totalPages}
+          value={page}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            if (Number.isInteger(next)) onPageChange(Math.min(Math.max(1, next), totalPages));
+          }}
+          aria-label="Page number"
+        />
+        of {totalPages}
+      </span>
+      <select
+        className="pager-size-select"
+        value={pageSize}
+        onChange={(e) => onPageSizeChange(Number(e.target.value))}
+        aria-label="Rows per page"
+      >
+        {PAGE_SIZE_OPTIONS.map((size) => (
+          <option key={size} value={size}>
+            {size} rows
+          </option>
+        ))}
+      </select>
+      <span className="pager-total">
+        {total} {noun}
+      </span>
+      <button
+        className="pager-arrow"
+        type="button"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= totalPages}
+        aria-label="Next page"
+      >
+        →
+      </button>
+    </div>
+  );
+}
+
 function SeverityCell({ job }) {
   if (!job.severity) {
     return (
@@ -208,6 +270,8 @@ export default function HistoryPage() {
   const [loadedDashboard, setDashboard] = useState(null); // { subsystem, runs, rows } as last fetched
   const [dashboardError, setDashboardError] = useState(null);
   const [sort, setSort] = useState({ column: "date", direction: "desc" });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [downloadKey, setDownloadKey] = useState(filter ?? ""); // follows the selected tab; empty on All
   const [downloadError, setDownloadError] = useState(null);
 
@@ -276,6 +340,10 @@ export default function HistoryPage() {
       .finally(() => setPreviewLoading(false));
   }, [preview]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [filter, sort, pageSize]);
+
   const sortedJobs = useMemo(() => {
     const keyFn = SORT_KEYS[sort.column];
     const sign = sort.direction === "asc" ? 1 : -1;
@@ -297,6 +365,17 @@ export default function HistoryPage() {
     const sign = sort.direction === "asc" ? 1 : -1;
     return [...rows].sort((a, b) => sign * compareValues(keyFn(a), keyFn(b)));
   }, [rows, sort, predictionColumns]);
+
+  // Sliced for display; sortedJobs/sortedRows above stay the full sorted set so the pager's
+  // total count and "of N" reflect everything, not just the current page.
+  const totalJobs = sortedJobs.length;
+  const totalTableRows = sortedRows.length;
+  const currentTotal = filter ? totalTableRows : totalJobs;
+  const totalPages = Math.max(1, Math.ceil(currentTotal / pageSize));
+  const clampedPage = Math.min(Math.max(1, page), totalPages);
+  const pageStart = (clampedPage - 1) * pageSize;
+  const pagedJobs = sortedJobs.slice(pageStart, pageStart + pageSize);
+  const pagedRows = sortedRows.slice(pageStart, pageStart + pageSize);
 
   // Whenever the tab changes (a click, or the browser's Back/Forward), the download dropdown follows
   // it and the sort resets to newest first.
@@ -421,7 +500,7 @@ export default function HistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {sortedRows.map((row, i) => (
+              {pagedRows.map((row, i) => (
                 <tr key={`${row.job_id}-${i}`}>
                   <td>{new Date(row.created_at).toLocaleString()}</td>
                   {showSeverity && (
@@ -453,6 +532,14 @@ export default function HistoryPage() {
               )}
             </tbody>
           </table>
+          <Pager
+            page={clampedPage}
+            pageSize={pageSize}
+            total={totalTableRows}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            noun={filter === "door" ? "segments" : "records"}
+          />
         </div>
       ) : (
       <div className="history-table-card">
@@ -478,7 +565,7 @@ export default function HistoryPage() {
             </tr>
           </thead>
           <tbody>
-            {sortedJobs.map((job) => (
+            {pagedJobs.map((job) => (
               <tr key={job.id}>
                 <td>{SUBSYSTEM_LABELS[job.subsystem] ?? job.subsystem}</td>
                 <td>{new Date(job.created_at).toLocaleString()}</td>
@@ -513,6 +600,14 @@ export default function HistoryPage() {
             )}
           </tbody>
         </table>
+        <Pager
+          page={clampedPage}
+          pageSize={pageSize}
+          total={totalJobs}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          noun="records"
+        />
       </div>
       )}
 
