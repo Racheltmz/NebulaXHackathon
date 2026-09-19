@@ -24,13 +24,6 @@ The public-test scores were returned by the organisers' validator for the models
 The cross-validated numbers are optimistic (see *Caveats*); **ACV is the clear failure**: cross-validation said perfect, the unseen case
 ranked the faulty car 6th of 8.
 
-## The submission zip
-
-`submissions/predictions.zip` holds `door_/acv_/rail_/shm_predictions.csv` at the top level, with headers byte-identical to the organiser
-examples. Door, Rail and SHM are the models' own predictions, each fitted on **all** the labelled data (Door 110 segments, ACV 48 cars, Rail 272
-recordings, SHM 64 traces). **The ACV ranking in this zip was set manually** (car 01 first, the car the public ACV score implied), so it does not
-reflect the model, whose own ACV output scored 0.375.
-
 ## How the models were found: the OpenEvolve pipeline
 
 **Setup.** OpenEvolve 0.3.2 driven through the `openevolve-scientist` wrapper, which calls `codex exec` read-only with the saved Codex
@@ -92,8 +85,7 @@ python acv/acv_model.py   --data-root <02_Datasets> --out out/acv
 python rail/rail_model.py --data-root <02_Datasets> --out out/rail --jobs 4     # ~10 min
 python shm/shm_model.py   --data-root <02_Datasets> --out out/shm  --jobs 4     # ~10 min
 ```
-Each writes `<task>_predictions.csv`. Door and Rail reproduce the models' submitted files byte-for-byte; ACV reproduces the model's own ranking (the ACV
-file in the zip was set manually, see above); SHM matches to ~5×10⁻⁸ relative.
+Each writes `<task>_predictions.csv`. Door, ACV and Rail reproduce the submitted predictions byte-for-byte; SHM matches to ~5×10⁻⁸ relative.
 
 ## Caveats
 

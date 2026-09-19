@@ -1,6 +1,6 @@
 # SHM — cumulative fatigue-damage regression
 
-`shm_model.py` is the single file behind both SHM submissions: raw-data preprocessing (feature extraction from the stress traces), the
+`shm_model.py` is the single file behind the SHM submission: raw-data preprocessing (feature extraction from the stress traces), the
 exact OpenEvolve program that was fitted, and a driver that trains on **all** 64 labelled traces and writes `shm_predictions.csv`.
 
 | | |
@@ -75,4 +75,4 @@ With 64 traces, differences of a few thousandths between programs are noise.
 ```bash
 python shm_model.py --data-root <02_Datasets> --out out/ --jobs 4     # ~10 min: recomputes the features from the raw files
 ```
-The output matches the SHM file in the submitted zip to about 5×10⁻⁸ relative (float rounding in the recomputed features).
+The output matches the submitted SHM predictions to about 5×10⁻⁸ relative (float rounding in the recomputed features).

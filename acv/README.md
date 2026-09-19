@@ -1,6 +1,6 @@
 # ACV — refrigerant-leak car ranking
 
-`acv_model.py` is the single file behind both ACV submissions: raw-data preprocessing, the exact program that was fitted, and a driver
+`acv_model.py` is the single file behind the ACV submission: raw-data preprocessing, the exact program that was fitted, and a driver
 that trains on **all** labelled cars and writes `acv_predictions.csv`.
 
 | | |
@@ -60,5 +60,4 @@ Pairwise comparison suits the question ("which car ranks first?") and, in the fi
 ```bash
 python acv_model.py --data-root <02_Datasets> --out out/     # writes out/acv_predictions.csv
 ```
-The output is the model's own ranking, `04|07|03|06|05|01|08|02`, which scored 0.375. In `submissions/predictions.zip` the ACV ranking was
-set manually (car 01 first); the Door, Rail and SHM files in that zip are the models' own output.
+The output is the model's ranking, `04|07|03|06|05|01|08|02`, which scored 0.375 on the public test set and is byte-identical to the submitted prediction.

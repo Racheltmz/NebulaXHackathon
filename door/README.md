@@ -1,6 +1,6 @@
 # Door — abnormal-resistance cycle classifier
 
-`door_model.py` is the single file behind both Door submissions: raw-data preprocessing, the exact OpenEvolve program that was
+`door_model.py` is the single file behind the Door submission: raw-data preprocessing, the exact OpenEvolve program that was
 fitted, and a driver that trains on **all** labelled data and writes `door_predictions.csv`.
 
 | | |
@@ -74,4 +74,4 @@ not been diagnosed. There are only 30 abnormal training cycles.
 ```bash
 python door_model.py --data-root <02_Datasets> --out out/     # writes out/door_predictions.csv
 ```
-The output is byte-identical to the Door file in the submitted zip.
+The output is byte-identical to the submitted Door predictions.

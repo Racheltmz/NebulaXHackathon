@@ -1,6 +1,6 @@
 # Rail corrugation — Normal / Side I / Side II classifier
 
-`rail_model.py` is the single file behind both Rail submissions: raw-data preprocessing (feature extraction from the 128-channel
+`rail_model.py` is the single file behind the Rail submission: raw-data preprocessing (feature extraction from the 128-channel
 recordings), the exact OpenEvolve program that was fitted, and a driver that trains on **all** 272 labelled recordings and writes
 `rail_predictions.csv`.
 
@@ -85,4 +85,4 @@ recording moves macro-F1 by several points.
 ```bash
 python rail_model.py --data-root <02_Datasets> --out out/ --jobs 4     # ~10 min: recomputes the features from the raw files
 ```
-The output is byte-identical to the Rail file in the submitted zip.
+The output is byte-identical to the submitted Rail predictions.
