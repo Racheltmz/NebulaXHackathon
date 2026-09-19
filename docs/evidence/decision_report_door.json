@@ -1,0 +1,70 @@
+{
+  "task": "door",
+  "n_labelled": 110,
+  "n_heldout": 38,
+  "mode": "single fully-trained program",
+  "program": "classical:41962a",
+  "schemes": [
+    "full",
+    "kfold",
+    "ovl",
+    "sub80",
+    "div3"
+  ],
+  "program_types": [
+    "classical:41962a",
+    "classical:aa6df0"
+  ],
+  "pruning": {
+    "type_oof": {
+      "classical:41962a": 1.0,
+      "classical:aa6df0": 1.0
+    },
+    "kept": [
+      "classical:41962a",
+      "classical:aa6df0"
+    ]
+  },
+  "decision": {
+    "nested_ensemble_oof": 1.0,
+    "best_single_key": "classical:41962a|full",
+    "best_single_oof": 1.0,
+    "use_ensemble": false,
+    "rule": "ensemble is used only if its nested OOF score is strictly higher than the best single program trained on all data; otherwise that single fully-trained program is used"
+  },
+  "ensemble_candidate": {
+    "weights": {
+      "classical:41962a|full": 0.1,
+      "classical:aa6df0|full": 0.1,
+      "classical:41962a|kfold": 0.1,
+      "classical:aa6df0|kfold": 0.1,
+      "classical:41962a|ovl": 0.1,
+      "classical:aa6df0|ovl": 0.1,
+      "classical:41962a|sub80": 0.1,
+      "classical:aa6df0|sub80": 0.1,
+      "classical:41962a|div3": 0.1,
+      "classical:aa6df0|div3": 0.1
+    },
+    "calibration": {
+      "single_key_oof": {
+        "classical:41962a|full": 1.0,
+        "classical:aa6df0|full": 1.0,
+        "classical:41962a|kfold": 1.0,
+        "classical:aa6df0|kfold": 1.0,
+        "classical:41962a|ovl": 1.0,
+        "classical:aa6df0|ovl": 1.0,
+        "classical:41962a|sub80": 1.0,
+        "classical:aa6df0|sub80": 1.0,
+        "classical:41962a|div3": 0.990909090909091,
+        "classical:aa6df0|div3": 0.990909090909091
+      },
+      "uniform_oof": 1.0,
+      "best_oof": 1.0,
+      "chosen_oof": 1.0,
+      "n_structured_candidates": 18,
+      "note": "chosen_oof is optimistic: the weights were fitted on these same OOF predictions"
+    }
+  },
+  "member_errors": [],
+  "seconds": 44.6
+}

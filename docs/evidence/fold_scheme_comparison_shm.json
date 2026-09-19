@@ -1,0 +1,32 @@
+{
+  "shm": {
+    "scheme:full": 0.9280562290065418,
+    "scheme:div3": 0.9085619559514391,
+    "scheme:ovl": 0.9220671765935148,
+    "scheme:kfold": 0.9299702215948937,
+    "scheme:boot": 0.9214857578240188,
+    "scheme:sub80": 0.9258743786302999,
+    "all_schemes_uniform": 0.9263265648549828,
+    "best_single_program_full": 0.9280562290065418,
+    "keys": {
+      "classical_nx:46efff|full": 0.9280562290065418,
+      "classical_nx:57dfb6|full": 0.9280562290065418,
+      "classical_nx:f26e3d|full": 0.9280562290065418,
+      "classical_nx:46efff|div3": 0.9085619559514391,
+      "classical_nx:57dfb6|div3": 0.9085619559514391,
+      "classical_nx:f26e3d|div3": 0.9085619559514391,
+      "classical_nx:46efff|ovl": 0.9220671765935148,
+      "classical_nx:57dfb6|ovl": 0.9220671765935148,
+      "classical_nx:f26e3d|ovl": 0.9220671765935148,
+      "classical_nx:46efff|kfold": 0.9299702215948937,
+      "classical_nx:57dfb6|kfold": 0.9299702215948937,
+      "classical_nx:f26e3d|kfold": 0.9299702215948937,
+      "classical_nx:46efff|boot": 0.9214857578240188,
+      "classical_nx:57dfb6|boot": 0.9214857578240188,
+      "classical_nx:f26e3d|boot": 0.9214857578240188,
+      "classical_nx:46efff|sub80": 0.9258743786302999,
+      "classical_nx:57dfb6|sub80": 0.9258743786302999,
+      "classical_nx:f26e3d|sub80": 0.9258743786302999
+    }
+  }
+}

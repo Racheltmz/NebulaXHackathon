@@ -58,7 +58,10 @@ def acv_rank_decay(y_true: np.ndarray, fault_scores: np.ndarray, case_ids: np.nd
         if yt.sum() == 0:
             continue
         faulty_idx = int(np.argmax(yt))
-        order = np.argsort(-fs)
-        rank = int(np.where(order == faulty_idx)[0][0]) + 1
+        # Ties are scored at their EXPECTED rank (random tie-break), never by array order: an all-tied case
+        # (e.g. a model with no usable signal) must not get rank 1 just because the faulty car is listed first.
+        greater = int((fs > fs[faulty_idx] + 1e-12).sum())
+        ties = int((np.abs(fs - fs[faulty_idx]) <= 1e-12).sum()) - 1
+        rank = 1 + greater + ties / 2.0
         per_case_scores.append((n - (rank - 1)) / n)
     return float(np.mean(per_case_scores)) if per_case_scores else 0.0

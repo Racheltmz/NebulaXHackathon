@@ -1,0 +1,58 @@
+{
+  "task": "rail",
+  "n_labelled": 272,
+  "n_heldout": 68,
+  "mode": "single fully-trained program",
+  "program": "classical_nx:68a6b9",
+  "schemes": [
+    "full"
+  ],
+  "program_types": [
+    "classical_nx:9226e6",
+    "classical_nx:af960c",
+    "classical_nx:68a6b9"
+  ],
+  "pruning": {
+    "type_oof": {
+      "classical:468ad4": 0.6907501190321602,
+      "classical:a2ddc5": 0.6965051395007342,
+      "classical_nx:43d41e": 0.8122190281412833,
+      "classical_nx:9226e6": 0.8221633985826126,
+      "classical_nx:af960c": 0.8221633985826126,
+      "classical_nx:68a6b9": 0.8523691281461638
+    },
+    "kept": [
+      "classical_nx:68a6b9",
+      "classical_nx:9226e6",
+      "classical_nx:af960c"
+    ]
+  },
+  "decision": {
+    "nested_ensemble_oof": 0.8523691281461638,
+    "best_single_key": "classical_nx:68a6b9|full",
+    "best_single_oof": 0.8523691281461638,
+    "use_ensemble": false,
+    "rule": "ensemble is used only if its nested OOF score is strictly higher than the best single program trained on all data; otherwise that single fully-trained program is used"
+  },
+  "ensemble_candidate": {
+    "weights": {
+      "classical_nx:9226e6|full": 0.20834197812650285,
+      "classical_nx:af960c|full": 0.29092774315021963,
+      "classical_nx:68a6b9|full": 0.5007302787232776
+    },
+    "calibration": {
+      "single_key_oof": {
+        "classical_nx:9226e6|full": 0.8221633985826126,
+        "classical_nx:af960c|full": 0.8221633985826126,
+        "classical_nx:68a6b9|full": 0.8523691281461638
+      },
+      "uniform_oof": 0.8221633985826126,
+      "best_oof": 0.8523691281461638,
+      "chosen_oof": 0.8523691281461638,
+      "n_structured_candidates": 8,
+      "note": "chosen_oof is optimistic: the weights were fitted on these same OOF predictions"
+    }
+  },
+  "member_errors": [],
+  "seconds": 259.0
+}

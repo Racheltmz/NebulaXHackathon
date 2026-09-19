@@ -25,6 +25,7 @@ class Model:
         self._model = None
         self._label = None
         self._channels = 0
+        self._scale = None
 
     def _features(self, X):
         out = []
@@ -122,9 +123,11 @@ class Model:
                 SVC(C=3.0, gamma="scale",
                     class_weight="balanced"))
             self._model.fit(f, y)
+            self._scale = np.std(f, axis=0)
 
     def predict(self, X: Sequence[np.ndarray]) -> np.ndarray:
         if self._model is None:
             return np.full(len(X), self._label, dtype=object)
-        return np.asarray(self._model.predict(self._features(X)), dtype=object)
+        f = self._features(X)
+        return np.asarray(self._model.predict(f), dtype=object)
 # EVOLVE-BLOCK-END

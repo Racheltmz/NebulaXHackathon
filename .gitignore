@@ -7,3 +7,7 @@ data/NebulaX-Hackathon-ProblemStatement/
 *.pt
 *.pkl
 openevolve_output*/
+.venv-final/
+logs_final/
+submission/
+submission_*/

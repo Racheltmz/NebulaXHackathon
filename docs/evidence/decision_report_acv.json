@@ -1,0 +1,83 @@
+{
+  "task": "acv",
+  "n_labelled": 48,
+  "n_heldout": 8,
+  "mode": "single fully-trained program",
+  "program": "classical_nx:seed",
+  "schemes": [
+    "full",
+    "kfold",
+    "ovl",
+    "sub80",
+    "div3"
+  ],
+  "program_types": [
+    "classical:128140",
+    "classical:62dbdc",
+    "classical_nx:seed"
+  ],
+  "pruning": {
+    "type_oof": {
+      "classical:128140": 0.95,
+      "classical:62dbdc": 0.95,
+      "classical_nx:seed": 1.0
+    },
+    "kept": [
+      "classical_nx:seed",
+      "classical:128140",
+      "classical:62dbdc"
+    ]
+  },
+  "decision": {
+    "nested_ensemble_oof": 1.0,
+    "best_single_key": "classical_nx:seed|full",
+    "best_single_oof": 1.0,
+    "use_ensemble": false,
+    "rule": "ensemble is used only if its nested OOF score is strictly higher than the best single program trained on all data; otherwise that single fully-trained program is used"
+  },
+  "ensemble_candidate": {
+    "weights": {
+      "classical:128140|full": 0.06666666666666667,
+      "classical:62dbdc|full": 0.06666666666666667,
+      "classical_nx:seed|full": 0.06666666666666667,
+      "classical:128140|kfold": 0.06666666666666667,
+      "classical:62dbdc|kfold": 0.06666666666666667,
+      "classical_nx:seed|kfold": 0.06666666666666667,
+      "classical:128140|ovl": 0.06666666666666667,
+      "classical:62dbdc|ovl": 0.06666666666666667,
+      "classical_nx:seed|ovl": 0.06666666666666667,
+      "classical:128140|sub80": 0.06666666666666667,
+      "classical:62dbdc|sub80": 0.06666666666666667,
+      "classical_nx:seed|sub80": 0.06666666666666667,
+      "classical:128140|div3": 0.06666666666666667,
+      "classical:62dbdc|div3": 0.06666666666666667,
+      "classical_nx:seed|div3": 0.06666666666666667
+    },
+    "calibration": {
+      "single_key_oof": {
+        "classical:128140|full": 0.95,
+        "classical:62dbdc|full": 0.95,
+        "classical_nx:seed|full": 1.0,
+        "classical:128140|kfold": 0.95,
+        "classical:62dbdc|kfold": 0.95,
+        "classical_nx:seed|kfold": 0.975,
+        "classical:128140|ovl": 0.85,
+        "classical:62dbdc|ovl": 0.85,
+        "classical_nx:seed|ovl": 1.0,
+        "classical:128140|sub80": 0.95,
+        "classical:62dbdc|sub80": 0.95,
+        "classical_nx:seed|sub80": 0.975,
+        "classical:128140|div3": 0.9,
+        "classical:62dbdc|div3": 0.925,
+        "classical_nx:seed|div3": 1.0
+      },
+      "uniform_oof": 1.0,
+      "best_oof": 1.0,
+      "chosen_oof": 1.0,
+      "n_structured_candidates": 24,
+      "note": "chosen_oof is optimistic: the weights were fitted on these same OOF predictions"
+    }
+  },
+  "member_errors": [],
+  "seconds": 11.4
+}

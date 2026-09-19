@@ -29,41 +29,24 @@ CHECKPOINT = "google/timesfm-3.0-pytorch"
 
 # EVOLVE-BLOCK-START
 class _MILPool(nn.Module):
-    """Gated-attention MIL pooling over channels-as-instances. Underscore-
-    prefixed and inside the evolve block on purpose: it's a starting point,
-    not part of the frozen contract -- feel free to replace, remove, or
-    redesign it entirely, as long as `Model.fit`/`Model.predict` keep their
-    signatures."""
+    """Hierarchical attention pooling over temporal patches and channels."""
 
     def __init__(self, dim: int, hidden: int = 128):
         super().__init__()
-        self.temporal = nn.Sequential(
-            nn.Linear(dim, hidden), nn.GELU(), nn.Linear(hidden, 1)
-        )
         self.V = nn.Linear(dim, hidden)
         self.U = nn.Linear(dim, hidden)
         self.w = nn.Linear(hidden, 1)
+        self.temporal = nn.Linear(dim, 1)
 
     def forward(self, tok: torch.Tensor) -> torch.Tensor:
-        # Normalize each token so attention is driven by structure rather
-        # than arbitrary backbone activation scale.
-        tok = torch.nn.functional.layer_norm(tok, (tok.shape[-1],))
-
-        # Learn informative patches while retaining global context.
-        temporal_logits = self.temporal(tok).squeeze(-1)
-        temporal_w = torch.softmax(temporal_logits, dim=2)
-        temporal_w = 0.7 * temporal_w + 0.3 / tok.shape[2]
-        temporal_w = temporal_w.unsqueeze(-1)
-        mean_p = (tok * temporal_w).sum(2)
+        mean_p = tok.mean(2)
         max_p = tok.amax(2)
-        std_p = tok.std(2, unbiased=False)
-        pooled = torch.cat([mean_p, max_p, std_p], dim=-1)
-
-        # Then learn which sensor channels are informative.
-        # Use both average and peak temporal responses when selecting channels.
-        gate = torch.tanh(self.V(mean_p)) * torch.sigmoid(self.U(max_p))
-        channel_w = torch.softmax(self.w(gate), dim=1)
-        return (pooled * channel_w).sum(1)
+        temporal_w = torch.softmax(self.temporal(tok).squeeze(-1), dim=2)
+        attn_p = (tok * temporal_w.unsqueeze(-1)).sum(2)
+        pooled = torch.cat([mean_p, max_p, attn_p], -1)
+        gate = torch.tanh(self.V(mean_p)) * torch.sigmoid(self.U(mean_p))
+        w = torch.softmax(self.w(gate), dim=1)
+        return (pooled * w).sum(1)
 
 
 class Model:
@@ -130,27 +113,21 @@ class Model:
         torch.manual_seed(17)
         self._pool = _MILPool(dim).to(self.device)
         self._head = nn.Sequential(
-            nn.LayerNorm(3 * dim),
-            nn.Linear(3 * dim, 256), nn.GELU(),
-            nn.Dropout(0.20),
-            nn.Linear(256, 96), nn.GELU(),
-            nn.Dropout(0.10),
-            nn.Linear(96, n_out),
+            nn.Dropout(0.3), nn.Linear(3 * dim, 128), nn.GELU(),
+            nn.Dropout(0.3), nn.Linear(128, n_out),
         ).to(self.device)
         params = list(self._pool.parameters()) + list(self._head.parameters())
         opt = torch.optim.AdamW(params, lr=1e-3, weight_decay=1e-2)
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=150)
 
-        # LayerNorm in the classifier handles feature scale. Keeping a
-        # normalization statistic computed from the randomly initialized pool
-        # would become stale as the attention pool learns.
-        self._mean = None
-        self._std = None
+        with torch.no_grad():
+            pooled0 = self._pool(feats)
+            self._mean = pooled0.mean(0, keepdim=True)
+            self._std = pooled0.std(0, keepdim=True).clamp_min(1e-4)
 
         counts = torch.bincount(y_idx, minlength=n_out).float().clamp_min(1)
-        # Softer reweighting avoids overcorrecting minority labels.
-        class_weight = (counts.sum() / (n_out * counts)).sqrt().to(self.device)
-        loss_fn = nn.CrossEntropyLoss(weight=class_weight, label_smoothing=0.02)
+        class_weight = (counts.sum() / (n_out * counts)).to(self.device)
+        loss_fn = nn.CrossEntropyLoss(weight=class_weight)
 
         y_idx = y_idx.to(self.device)
         n = feats.shape[0]
@@ -162,7 +139,7 @@ class Model:
                 xb = feats[idx] + 0.05 * torch.randn_like(feats[idx])
                 mask = (torch.rand(xb.shape[:3], device=self.device) > 0.15).float().unsqueeze(-1)
                 xb = xb * mask / 0.85
-                pooled = self._pool(xb)
+                pooled = (self._pool(xb) - self._mean) / self._std
                 logits = self._head(pooled)
                 loss = loss_fn(logits, y_idx[idx])
                 opt.zero_grad()
@@ -173,17 +150,9 @@ class Model:
 
     def predict(self, X: Sequence[np.ndarray]) -> np.ndarray:
         feats = self._extract(X).to(self.device)
-        self._pool.eval()
-        # Monte Carlo dropout provides a cheap neural snapshot ensemble at
-        # inference time and reduces sensitivity to one randomly thinned head.
-        self._head.train()
         with torch.no_grad():
-            pooled = self._pool(feats)
-            probs = 0.0
-            for _ in range(8):
-                probs = probs + torch.softmax(self._head(pooled), dim=-1)
-            probs = probs / 8.0
-            idx = probs.argmax(-1).cpu().numpy()
-        self._head.eval()
+            pooled = (self._pool(feats) - self._mean) / self._std
+            logits = self._head(pooled)
+            idx = logits.argmax(-1).cpu().numpy()
         return np.array([self._labels[i] for i in idx], dtype=object)
 # EVOLVE-BLOCK-END

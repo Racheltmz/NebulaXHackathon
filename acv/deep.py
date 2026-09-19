@@ -28,29 +28,23 @@ CHECKPOINT = "google/timesfm-3.0-pytorch"
 
 # EVOLVE-BLOCK-START
 class _MILPool(nn.Module):
-    """Multi-statistic temporal/channel attention pooling."""
+    """Channel attention with complementary temporal statistics."""
 
     def __init__(self, dim: int, hidden: int = 128):
         super().__init__()
         self.V = nn.Linear(dim, hidden)
         self.U = nn.Linear(dim, hidden)
         self.w = nn.Linear(hidden, 1)
-        self.temporal = nn.Sequential(
-            nn.Linear(dim, hidden // 2),
-            nn.GELU(),
-            nn.Linear(hidden // 2, 1),
-        )
 
     def forward(self, tok: torch.Tensor) -> torch.Tensor:
         mean_p = tok.mean(2)
         max_p = tok.amax(2)
-        std_p = tok.std(2, unbiased=False)
-        tw = torch.softmax(self.temporal(tok), dim=2)
-        attn_p = (tok * tw).sum(2)
-        pooled = torch.cat([mean_p, max_p, std_p, attn_p], -1)
         gate = torch.tanh(self.V(mean_p)) * torch.sigmoid(self.U(mean_p))
-        w = torch.softmax(self.w(gate), dim=1)
-        return (pooled * w).sum(1)
+        weights = torch.softmax(self.w(gate), dim=1)
+        std_p = tok.std(2, unbiased=False)
+        last_p = tok[:, :, -1]
+        stats = torch.stack((mean_p, max_p, std_p, last_p), dim=2)
+        return (stats * weights.unsqueeze(-1)).sum(1).flatten(1)
 
 
 class Model:
@@ -104,19 +98,7 @@ class Model:
         return torch.cat(feats, dim=0)  # [N, C, n_patches, dim]
 
     def fit(self, X: Sequence[np.ndarray], y: np.ndarray) -> None:
-        raw_y = np.asarray(y)
-        if raw_y.dtype.kind in "OUS":
-            labels = np.char.lower(raw_y.astype(str))
-            y_idx = torch.tensor(
-                np.where(
-                    np.isin(labels, ["normal", "healthy", "0", "false", "nonfaulty"]),
-                    0,
-                    1,
-                ),
-                dtype=torch.long,
-            )
-        else:
-            y_idx = torch.tensor((raw_y.astype(float) != 0).astype(np.int64))
+        y_idx = torch.tensor(np.asarray(y, dtype=np.int64))
         feats = self._extract(X).to(self.device)
         dim = feats.shape[-1]
 
@@ -124,17 +106,17 @@ class Model:
         self._pool = _MILPool(dim).to(self.device)
         self._head = nn.Sequential(
             nn.LayerNorm(4 * dim),
-            nn.Linear(4 * dim, 128), nn.GELU(),
-            nn.Dropout(0.15),
-            nn.Linear(128, 64), nn.GELU(),
-            nn.Dropout(0.15), nn.Linear(64, 2),
+            nn.Dropout(0.25), nn.Linear(4 * dim, 96), nn.GELU(),
+            nn.Dropout(0.2), nn.Linear(96, 2),
         ).to(self.device)
         params = list(self._pool.parameters()) + list(self._head.parameters())
         opt = torch.optim.AdamW(params, lr=1e-3, weight_decay=1e-2)
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=150)
 
-        self._mean = None
-        self._std = None
+        # LayerNorm in the head provides stable feature scaling; avoid using
+        # stale pool statistics while the attention pool is still adapting.
+        self._mean = torch.zeros((1, 4 * dim), device=self.device)
+        self._std = torch.ones((1, 4 * dim), device=self.device)
 
         counts = torch.bincount(y_idx, minlength=2).float().clamp_min(1)
         class_weight = (counts.sum() / (2 * counts)).to(self.device)
@@ -142,23 +124,15 @@ class Model:
 
         y_idx = y_idx.to(self.device)
         n = feats.shape[0]
-        bs = n
+        bs = min(16, max(2, n))
         for _ in range(150):
             perm = torch.randperm(n, device=self.device)
             for start in range(0, n, bs):
                 idx = perm[start:start + bs]
-                xb = feats[idx] + 0.025 * torch.randn_like(feats[idx])
+                xb = feats[idx] + 0.03 * torch.randn_like(feats[idx])
                 pooled = self._pool(xb)
                 logits = self._head(pooled)
                 loss = loss_fn(logits, y_idx[idx])
-                score = logits[:, 1] - logits[:, 0]
-                pos = score[y_idx[idx] == 1]
-                neg = score[y_idx[idx] == 0]
-                if pos.numel() and neg.numel():
-                    pair_loss = torch.nn.functional.softplus(
-                        -(pos[:, None] - neg[None, :])
-                    ).mean()
-                    loss = loss + 0.35 * pair_loss
                 opt.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(params, 2.0)
@@ -167,11 +141,13 @@ class Model:
 
     def predict(self, X: Sequence[np.ndarray]) -> np.ndarray:
         feats = self._extract(X).to(self.device)
-        self._pool.eval()
-        self._head.eval()
         with torch.no_grad():
-            pooled = self._pool(feats)
-            logits = self._head(pooled)
-            score = logits[:, 1] - logits[:, 0]
+            # Mild feature-space TTA matches the augmentation used in training
+            # and reduces variance in the ranking scores.
+            logits = 0.0
+            for _ in range(4):
+                pooled = self._pool(feats + 0.012 * torch.randn_like(feats))
+                logits = logits + self._head(pooled)
+            score = torch.softmax(logits / 4.0, -1)[:, 1]
         return score.cpu().numpy().astype(float)
 # EVOLVE-BLOCK-END

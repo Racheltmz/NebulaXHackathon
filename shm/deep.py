@@ -38,8 +38,8 @@ class _MILPool(nn.Module):
 
     def __init__(self, dim: int, hidden: int = 128):
         super().__init__()
-        self.V = nn.Linear(dim, hidden)
-        self.U = nn.Linear(dim, hidden)
+        self.V = nn.Linear(2 * dim, hidden)
+        self.U = nn.Linear(2 * dim, hidden)
         self.w = nn.Linear(hidden, 1)
 
     def forward(self, tok: torch.Tensor) -> torch.Tensor:
@@ -47,7 +47,8 @@ class _MILPool(nn.Module):
         max_p = tok.amax(2)
         std_p = tok.std(2, unbiased=False)
         pooled = torch.cat([mean_p, max_p, std_p], -1)
-        gate = torch.tanh(self.V(mean_p)) * torch.sigmoid(self.U(mean_p))
+        summary = torch.cat([mean_p, std_p], -1)
+        gate = torch.tanh(self.V(summary)) * torch.sigmoid(self.U(summary))
         w = torch.softmax(self.w(gate), dim=1)
         return (pooled * w).sum(1)
 
@@ -62,8 +63,9 @@ class Model:
         self._std = None
         self._y_mean = None
         self._y_std = None
-        self._rmean = None
-        self._rstd = None
+        self._stat_mean = None
+        self._stat_std = None
+        self._last_stats = None
 
     def _load_backbone(self) -> None:
         if self._tfm3 is not None:
@@ -81,31 +83,56 @@ class Model:
         context = 512
         patch = self._tfm3.input_patch_len
         n = context // patch
-        arrs = []
+        arrs, stats = [], []
         for x in X:
             a = np.nan_to_num(np.asarray(x, dtype=np.float32))
             if a.ndim == 1:
                 a = a[None, :]
-            a = (a - a.mean(axis=1, keepdims=True)) / np.maximum(a.std(axis=1, keepdims=True), 1e-5)
-            T = a.shape[1]
-            starts = [max(0, T - context), max(0, (T - context) // 2), 0]
-            views = []
-            for s in starts:
-                v = a[:, s:s + context]
-                if v.shape[1] < context:
-                    v = np.pad(v, ((0, 0), (context - v.shape[1], 0)))
-                views.append(v)
-            arrs.append(np.concatenate(views, axis=1))
+            flat = a.reshape(-1)
+            centered = flat - flat.mean()
+            d = np.diff(flat) if flat.size > 1 else flat
+            abs_c = np.abs(centered)
+            q50, q90, q95, q99 = np.percentile(abs_c, [50, 90, 95, 99])
+            half = max(1, flat.size // 2)
+            rms0 = np.sqrt(np.mean(flat[:half] ** 2))
+            rms1 = np.sqrt(np.mean(flat[half:] ** 2))
+            stats.append([
+                np.log1p(np.std(flat)),
+                np.log1p(np.sqrt(np.mean(flat * flat))),
+                np.log1p(np.mean(abs_c)),
+                np.log1p(np.std(d)),
+                np.log1p(q50), np.log1p(q90), np.log1p(q95), np.log1p(q99),
+                np.log1p(np.max(abs_c)),
+                np.log1p(np.max(flat) - np.min(flat)),
+                np.log1p(rms0), np.log1p(rms1),
+            ])
+            length = a.shape[1]
+            last = max(0, length - context)
+            starts = np.linspace(0, last, 8).astype(np.int64)
+            crops = []
+            for start in starts:
+                c = a[:, start:start + context]
+                if c.shape[1] < context:
+                    c = np.pad(c, ((0, 0), (context - c.shape[1], 0)))
+                c = (c - c.mean(axis=1, keepdims=True)) / np.maximum(
+                    c.std(axis=1, keepdims=True), 1e-5
+                )
+                crops.append(c)
+            arrs.append(np.concatenate(crops, axis=0))
+        self._last_stats = torch.tensor(np.asarray(stats, dtype=np.float32))
         feats = []
         with torch.inference_mode():
-            for start in range(0, len(arrs), 16):
-                chunk = arrs[start:start + 16]
+            for start in range(0, len(arrs), 8):
+                chunk = arrs[start:start + 8]
                 batch = np.stack(chunk)
                 values = torch.from_numpy(batch).to(self.device).reshape(
-                    len(chunk), batch.shape[1], 3 * n, patch)
+                    len(chunk), batch.shape[1], n, patch
+                )
                 masks = torch.zeros_like(values, dtype=torch.bool)
-                target = torch.ones((len(chunk), batch.shape[1], 3 * n),
-                                    device=self.device, dtype=torch.bool)
+                target = torch.ones(
+                    (len(chunk), batch.shape[1], n),
+                    device=self.device, dtype=torch.bool,
+                )
                 out = self._tfm3(
                     {"values": values, "masks": masks, "patch_is_target": target},
                     return_aux_outputs=True,
@@ -113,76 +140,24 @@ class Model:
                 feats.append(out["__call__:transformer_output"].float().cpu())
         return torch.cat(feats, dim=0)
 
-    def _raw_features(self, X: Sequence[np.ndarray]) -> torch.Tensor:
-        out = []
-        for x in X:
-            a = np.nan_to_num(np.asarray(x, dtype=np.float32))
-            if a.ndim == 1:
-                a = a[None, :]
-            z = a.reshape(-1)
-            d = np.diff(z) if z.size > 1 else z
-            az = np.abs(z)
-            ad = np.abs(d)
-            q = np.percentile(z, [1, 5, 25, 50, 75, 95, 99])
-            aq = np.percentile(az, [90, 99])
-            n = z.size
-            cuts = np.linspace(0, n, 5, dtype=np.int64)
-            sr = [
-                np.sqrt(np.mean(z[cuts[i]:cuts[i + 1]] ** 2))
-                if cuts[i + 1] > cuts[i] else 0.0
-                for i in range(4)
-            ]
-            rms = np.sqrt(np.mean(z * z))
-            drms = np.sqrt(np.mean(d * d))
-            m = min(4096, n)
-            sample = z[np.linspace(0, n - 1, m).astype(np.int64)]
-            power = np.abs(np.fft.rfft(sample - sample.mean()))[1:] ** 2
-            total = power.sum() + 1e-8
-            bands = [float(v.sum() / total) for v in np.array_split(power, 4)]
-            centroid = float(
-                (power * np.arange(1, len(power) + 1)).sum()
-                / (total * max(1, len(power)))
-            )
-            prob = power / total
-            entropy = float(
-                -(prob * np.log(prob + 1e-12)).sum()
-                / np.log(max(2, len(prob)))
-            )
-            out.append([
-                np.mean(z), np.std(z), rms, np.mean(az), np.max(az),
-                q[0], q[1], q[2], q[3], q[4], q[5], q[6],
-                np.ptp(z), drms, np.sqrt(np.mean(d * d * d * d)),
-                np.mean(ad > 2.0 * (np.std(d) + 1e-6)),
-                np.mean(z[:-1] * z[1:] < 0) if n > 1 else 0.0,
-                *sr, np.log1p(rms), np.log1p(aq[0]), np.log1p(aq[1]),
-                np.max(az) / (rms + 1e-6), np.mean(ad),
-                *bands, centroid, entropy,
-            ])
-        return torch.tensor(np.asarray(out, dtype=np.float32), device=self.device)
-
     def fit(self, X: Sequence[np.ndarray], y: np.ndarray) -> None:
         y_t = torch.tensor(np.asarray(y, dtype=np.float32))
         feats = self._extract(X).to(self.device)
-        raw = self._raw_features(X)
         dim = feats.shape[-1]
+        stats = self._last_stats.to(self.device)
+        self._stat_mean = stats.mean(0, keepdim=True)
+        self._stat_std = stats.std(0, keepdim=True).clamp_min(1e-4)
 
         torch.manual_seed(17)
-        self._pool = _MILPool(dim).to(self.device)
+        self._pool = _MILPool(dim, hidden=192).to(self.device)
         self._head = nn.Sequential(
-            nn.LayerNorm(3 * dim + raw.shape[1]),
-            nn.Linear(3 * dim + raw.shape[1], 256), nn.GELU(),
-            nn.Dropout(0.12), nn.Linear(256, 96), nn.GELU(),
-            nn.Linear(96, 1),
+            nn.LayerNorm(3 * dim + 12), nn.Dropout(0.2),
+            nn.Linear(3 * dim + 12, 192), nn.GELU(),
+            nn.Dropout(0.2), nn.Linear(192, 1),
         ).to(self.device)
         params = list(self._pool.parameters()) + list(self._head.parameters())
-        opt = torch.optim.AdamW(params, lr=7e-4, weight_decay=3e-3)
-        sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=240)
-
-        with torch.no_grad():
-            self._mean = torch.zeros((1, 3 * dim), device=self.device)
-            self._std = torch.ones((1, 3 * dim), device=self.device)
-            self._rmean = raw.mean(0, keepdim=True)
-            self._rstd = raw.std(0, keepdim=True).clamp_min(1e-4)
+        opt = torch.optim.AdamW(params, lr=1e-3, weight_decay=1e-2)
+        sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=200)
 
         y_log = torch.log(y_t.clamp_min(1e-5))
         self._y_mean = y_log.mean()
@@ -191,15 +166,16 @@ class Model:
 
         n = feats.shape[0]
         bs = min(16, max(2, n))
-        for _ in range(240):
+        for _ in range(200):
             perm = torch.randperm(n, device=self.device)
             for start in range(0, n, bs):
                 idx = perm[start:start + bs]
-                xb = feats[idx] + 0.025 * torch.randn_like(feats[idx])
-                pooled = (self._pool(xb) - self._mean) / self._std
-                rb = (raw[idx] - self._rmean) / self._rstd
-                pred = self._head(torch.cat([pooled, rb], dim=-1))
+                xb = feats[idx] + 0.05 * torch.randn_like(feats[idx])
+                pooled = self._pool(xb)
+                sb = (stats[idx] - self._stat_mean) / self._stat_std
+                pred = self._head(torch.cat([pooled, sb], dim=-1))
                 loss = nn.functional.smooth_l1_loss(pred, y_scaled[idx])
+                loss = loss + 0.05 * nn.functional.mse_loss(pred, y_scaled[idx])
                 opt.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(params, 2.0)
@@ -208,11 +184,12 @@ class Model:
 
     def predict(self, X: Sequence[np.ndarray]) -> np.ndarray:
         feats = self._extract(X).to(self.device)
-        raw = self._raw_features(X)
+        stats = (self._last_stats.to(self.device) - self._stat_mean) / self._stat_std
+        self._pool.eval()
+        self._head.eval()
         with torch.no_grad():
-            pooled = (self._pool(feats) - self._mean) / self._std
-            raw = (raw - self._rmean) / self._rstd
-            pred = self._head(torch.cat([pooled, raw], dim=-1)).squeeze(-1)
+            pooled = self._pool(feats)
+            pred = self._head(torch.cat([pooled, stats], dim=-1)).squeeze(-1)
             pred = torch.exp(pred * self._y_std + self._y_mean)
         return pred.cpu().numpy().astype(float)
 # EVOLVE-BLOCK-END

@@ -1,13 +1,13 @@
 {
-  "program_id": "e550dd78-f6b6-4556-8112-7db98576323c",
-  "iteration_found": 260,
-  "checkpoint": "checkpoint_260",
-  "programs_scanned": 187,
+  "program_id": "a8d5ce26-800e-42b7-be63-5706878eaf12",
+  "iteration_found": 77,
+  "checkpoint": "checkpoint_110",
+  "programs_scanned": 273,
   "metrics": {
-    "combined_score": 0.7815,
-    "traintest_metric": 0.8554,
-    "cv3_metric": 0.7075,
-    "cv5_metric": 0.7528,
-    "code_length": 5422.0
+    "combined_score": 0.8076,
+    "traintest_metric": 0.8148,
+    "cv3_metric": 0.8003,
+    "cv5_metric": 0.809,
+    "code_length": 8647.0
   }
 }
