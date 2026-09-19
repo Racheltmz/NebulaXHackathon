@@ -32,7 +32,7 @@ ARTIFACTS = BACKEND / "ml_artifacts"
 sys.path.insert(0, str(BACKEND))
 
 from ml import featurize  # noqa: E402
-from ml.models import door_classical, rail_classical, shm_classical  # noqa: E402
+from ml.models import acv_classical, door_classical, rail_classical, shm_classical  # noqa: E402
 
 
 def _log(msg):
@@ -89,8 +89,30 @@ def fit_door():
     return model, {"n_train": len(X), "classes": sorted(set(y))}
 
 
-FITTERS = {"rail": fit_rail, "shm": fit_shm, "door": fit_door}
-# ACV is not here on purpose: ml/acv.py fits nothing, so it has no artifact to build.
+def fit_acv():
+    """6 case files x 8 cars -> [8, T] per car. Label: 1 for the faulty car of its own case.
+
+    Reads every training case including acv_case_04.xlsx, which is 34 MB and dominates the
+    runtime. The evolved model was searched against arrays built exactly this way.
+    """
+    base = DATA / "ACV"
+    labels = pd.read_csv(base / "Train_Labels.csv").set_index("filename")
+    # Excel writes ~$-prefixed lock files beside an open workbook; they are not readable data.
+    files = sorted(p for p in (base / "Train").glob("*.xlsx") if not p.name.startswith("~$"))
+    X, y = [], []
+    for path in files:
+        df = pd.read_excel(path, sheet_name=0)
+        faulty = str(labels.loc[path.name, "faulty_car"]).zfill(2)
+        cars, arrays = featurize.acv_case_arrays(df)
+        X.extend(arrays)
+        y.extend(int(car == faulty) for car in cars)
+        _log(f"    {path.name}: {len(cars)} cars, T={arrays[0].shape[1]}, faulty={faulty}")
+    model = acv_classical.Model()
+    model.fit(X, np.asarray(y, dtype=int))
+    return model, {"n_train": len(X), "n_cases": len(files), "n_faulty": int(sum(y))}
+
+
+FITTERS = {"acv": fit_acv, "rail": fit_rail, "shm": fit_shm, "door": fit_door}
 
 
 def main(argv):
