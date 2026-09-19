@@ -6,10 +6,14 @@ only the classification logic needs to change once a real model lands.
 """
 
 import io
+import logging
 
 import pandas as pd
 
 from .common import PredictionResult, UploadedFile
+from .rail_telemetry import build_telemetry
+
+logger = logging.getLogger(__name__)
 
 EXPECTED_COLUMNS = 129
 
@@ -30,5 +34,14 @@ def validate(files: list[UploadedFile]) -> None:
 
 def predict(files: list[UploadedFile]) -> PredictionResult:
     rows = [{"file_id": f.filename, "label": "Normal"} for f in files]
-    summary = {"Normal": len(rows), "Side I": 0, "Side II": 0, "model": "stub"}
+
+    telemetry = {}
+    for f in files:
+        # Display-only, so it must never fail the run — the label above is what's being asked for.
+        try:
+            telemetry[f.filename] = build_telemetry(pd.read_csv(io.BytesIO(f.content)))
+        except Exception:  # noqa: BLE001
+            logger.exception("Could not build rail telemetry for %s", f.filename)
+
+    summary = {"Normal": len(rows), "Side I": 0, "Side II": 0, "telemetry": telemetry, "model": "stub"}
     return PredictionResult(rows=rows, summary=summary)

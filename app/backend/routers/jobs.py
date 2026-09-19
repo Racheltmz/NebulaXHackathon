@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session
@@ -6,10 +8,13 @@ import config
 import storage
 from db import PredictionJob, PredictionRow, get_db
 from ml.common import preview_table
+from ml.door_telemetry import build_from_csv as build_door_telemetry
+from ml.rail_telemetry import build_from_csv as build_rail_telemetry
 from ml.export import rows_to_csv_bytes
 from schemas import InputFileInfo, JobDetailOut, PredictionRowOut
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
+logger = logging.getLogger(__name__)
 
 
 def _get_job_or_404(db: Session, job_id: str) -> PredictionJob:
@@ -31,9 +36,40 @@ def _get_input_file_or_404(job: PredictionJob, index: int) -> dict:
     return meta
 
 
+# Subsystems whose run dashboard plots the uploaded file's own readings, and the reducer for each.
+# Both read a CSV of a few MB in well under a second, so a run saved before the readings were kept
+# can have them rebuilt on the first page view rather than needing the file uploaded again. ACV is
+# absent on purpose: its workbooks take seconds to tens of seconds to read, which is too slow here.
+TELEMETRY_BUILDERS = {"door": build_door_telemetry, "rail_corrugation": build_rail_telemetry}
+
+
+def _backfill_telemetry(db: Session, job: PredictionJob) -> None:
+    build = TELEMETRY_BUILDERS.get(job.subsystem)
+    if build is None:
+        return
+    summary = dict(job.summary or {})
+    telemetry = dict(summary.get("telemetry") or {})
+    changed = False
+    for meta in job.input_files:
+        name = meta["filename"]
+        if name in telemetry or not meta.get("storage_path"):
+            continue
+        try:
+            content = storage.download_file(config.UPLOADS_BUCKET, meta["storage_path"])
+            telemetry[name] = build(content)
+        except Exception:  # noqa: BLE001 — missing creds, missing file, unreadable CSV: just no chart
+            logger.exception("Could not rebuild %s telemetry for %s", job.subsystem, name)
+            continue
+        changed = True
+    if changed:
+        job.summary = {**summary, "telemetry": telemetry}
+        db.commit()
+
+
 @router.get("/{job_id}", response_model=JobDetailOut)
 def get_job(job_id: str, db: Session = Depends(get_db)):
     job = _get_job_or_404(db, job_id)
+    _backfill_telemetry(db, job)
     rows = db.query(PredictionRow).filter(PredictionRow.job_id == job.id).all()
 
     return JobDetailOut(

@@ -136,6 +136,11 @@ body {
   cursor: pointer;
 }
 
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-lime {
   background: var(--db-accent-tint);
   color: var(--db-accent);
@@ -418,6 +423,20 @@ body {
   max-width: none;
 }
 
+/* Back to the History tab a run dashboard was opened from */
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--db-accent);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -443,6 +462,11 @@ body {
   gap: 16px;
   margin-bottom: 24px;
   flex-wrap: wrap;
+}
+
+/* Tiles that share the full row equally, instead of sitting at their own width. */
+.stat-tiles-fill .stat-tile {
+  flex: 1 1 0;
 }
 
 .stat-tile {
@@ -532,6 +556,37 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+
+/* Rail corrugation summary: a small records card beside a compact class distribution chart,
+   instead of one full-width chart with three far-apart bars. */
+.rail-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.rail-records-card {
+  flex: 0 0 200px;
+  justify-content: center;
+}
+
+.rail-class-card {
+  flex: 0 1 400px;
+  min-width: 260px;
+}
+
+.rail-class-card .bar-chart {
+  height: 150px;
+}
+
+/* Takes whatever width the records and class cards leave, and wraps below them when there isn't room */
+.rail-status-card {
+  flex: 1 1 300px;
+}
+
+.rail-status-card .car-model-list {
+  margin-top: 12px;
 }
 
 .shm-hero-value {
@@ -720,13 +775,13 @@ body {
   color: var(--db-positive);
 }
 
-.badge.abnormal {
+.badge.abnormal,
+.badge.side1,
+.badge.side2 {
   background: var(--db-negative-tint);
   color: var(--db-negative);
 }
 
-.badge.side1,
-.badge.side2,
 .badge.elevated {
   background: var(--db-warning-tint);
   color: var(--db-warning);
@@ -912,6 +967,11 @@ body {
   }
 }
 
+/* One block spanning the whole card instead of sharing it with a second column */
+.car-model-disclaimer.car-model-disclaimer-single {
+  grid-template-columns: 1fr;
+}
+
 .car-model-disclaimer h4 {
   margin: 0 0 8px;
   font-family: var(--fe-font);
@@ -942,6 +1002,10 @@ body {
   color: var(--fe-pewter);
 }
 
+.car-model-list dt.status-term {
+  margin-bottom: 4px;
+}
+
 /* A note that follows a heading on the same line: same size and weight, muted colour. */
 .heading-note {
   font-size: inherit;
@@ -950,13 +1014,17 @@ body {
 }
 
 /* ---------- ACV run dashboard — per-car telemetry (lines + state strips on one time axis) ---------- */
-.acv-telemetry {
+/* The chart's own colours, on the shared chart core so every dashboard that uses it gets them. */
+.telemetry-chart {
   --viz-grid: #e1e0d9;
   --viz-axis: #c3c2b7;
   --viz-muted: #898781;
   --viz-ink: #0b0b0b;
   --viz-ink-2: #52514e;
   --viz-surface: #fcfcfb;
+}
+
+.acv-telemetry {
   margin-bottom: 24px;
 }
 
@@ -1140,4 +1208,164 @@ body {
   border-radius: var(--radius-md);
   background: var(--db-negative-tint);
   color: var(--db-negative);
+}
+
+.viz-break {
+  stroke: var(--viz-axis);
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.viz-key-text {
+  fill: var(--viz-ink-2);
+}
+
+.viz-tooltip-flags {
+  max-width: 260px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--fe-edge);
+  color: var(--viz-ink-2);
+}
+
+.viz-tooltip-flags span {
+  color: var(--viz-ink);
+  font-weight: 500;
+}
+
+/* ---------- Rail corrugation — plan view of the 64 axle boxes ---------- */
+.axle-box-scroll {
+  overflow-x: auto;
+}
+
+.axle-rail {
+  fill: var(--fe-edge);
+}
+
+.axle-rail-label {
+  fill: var(--fe-pewter);
+  font-size: 11px;
+  font-family: var(--fe-font);
+}
+
+.axle-car-body {
+  fill: var(--fe-mist);
+  stroke: var(--fe-edge);
+  stroke-width: 1;
+}
+
+.axle-car-label {
+  fill: var(--fe-pewter);
+  font-size: 11px;
+  font-family: var(--fe-font);
+}
+
+.axle-box {
+  cursor: pointer;
+}
+
+.axle-box text {
+  font-family: var(--fe-font);
+  pointer-events: none;
+}
+
+.axle-box:hover rect:first-of-type {
+  stroke: var(--fe-ink);
+  stroke-width: 1.5;
+}
+
+.axle-box:focus-visible {
+  outline: none;
+}
+
+.axle-box:focus-visible rect:first-of-type {
+  stroke: var(--fe-cobalt);
+  stroke-width: 2;
+}
+
+/* The selected box keeps a ring that reads on any step of the ramp. */
+.axle-box-ring {
+  fill: none;
+  stroke: var(--fe-ink);
+  stroke-width: 2;
+}
+
+.axle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--fe-pewter);
+}
+
+.axle-legend-title {
+  margin-right: 6px;
+  color: var(--fe-ink);
+  font-weight: 500;
+}
+
+.axle-legend-swatch {
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.axle-legend-end {
+  font-variant-numeric: tabular-nums;
+}
+
+.axle-legend-hint {
+  margin-left: 10px;
+}
+
+.rail-telemetry .chart-card h3 {
+  margin-top: 0;
+}
+
+.rail-subhead {
+  margin: 24px 0 0;
+  font-family: var(--fe-font);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fe-ink);
+}
+
+/* ---------- "How to interpret" — the reading guide inside a plot's card ---------- */
+.interpret-note {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--db-paper);
+  border: 1px solid var(--fe-edge);
+  border-radius: var(--radius-md);
+}
+
+.interpret-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-md);
+  background: var(--db-accent-tint);
+  color: var(--db-accent);
+  font-family: var(--fe-font);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.interpret-note ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fe-pewter);
+}
+
+.interpret-note li + li {
+  margin-top: 4px;
+}
+
+.interpret-note strong {
+  color: var(--fe-ink);
+  font-weight: 500;
 }

@@ -31,6 +31,14 @@ class SeverityOut(BaseModel):
     detail: str
 
 
+class ResultOut(BaseModel):
+    """The one-glance pill for a run on the History page's All tab (see ml/result.py)."""
+
+    label: str
+    tone: str  # "normal" | "warning" | "fault"
+    detail: str
+
+
 class JobSummaryOut(BaseModel):
     id: str
     subsystem: str
@@ -39,6 +47,7 @@ class JobSummaryOut(BaseModel):
     summary: dict
     created_at: datetime
     severity: SeverityOut | None = None
+    result: ResultOut | None = None
 
 
 class JobDetailOut(JobSummaryOut):

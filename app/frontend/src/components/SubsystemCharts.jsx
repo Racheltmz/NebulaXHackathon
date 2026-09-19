@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 
 import apiClient from "../lib/apiClient";
 import BarChart from "./charts/BarChart";
+import DoorTelemetry from "./charts/DoorTelemetry";
+import RailTelemetry from "./charts/RailTelemetry";
 import DoorTimeline from "./charts/DoorTimeline";
 import AcvTelemetry from "./charts/AcvTelemetry";
 import TrainDiagram, { carsFromRanking } from "./charts/TrainDiagram";
 import { InfoIcon } from "./icons/NavIcons";
+import { StatusBadge } from "./ResultsTable";
 import StatTile from "./StatTile";
 
 /** Per-subsystem dashboard charts. Each takes `job` ({ rows, summary }) — a single run on the
@@ -18,8 +21,9 @@ const UNDERSTANDING = {
     title: "Understanding door segments",
     points: [
       "Each segment is one door open or close cycle found in a continuous stream of door controller data, with its start and end time.",
-      "Normal means the door moved freely. Abnormal resistance means the motor met extra resistance, for example from a foreign object in the slide rail, a jammed rubber strip or a deformed door leaf.",
-      "Repeated abnormal cycles can lead to door jamming and motor overload, so that door should be inspected.",
+      "Each segment is rated Normal or Abnormal resistance from the motor and door position signals recorded during that cycle.",
+      "Judge the door by how many segments are abnormal compared with the total detected, not by any single segment. One abnormal cycle among hundreds is probably noise.",
+      "A growing share of abnormal cycles suggests a real developing fault rather than noise.",
     ],
   },
   acv: {
@@ -34,14 +38,14 @@ const UNDERSTANDING = {
     title: "Understanding corrugation classes",
     points: [
       "Each file is a 1 second recording of axle box vibration and shock, classified as Normal, Side I or Side II.",
-      "Normal means both rails are healthy. Side I or Side II means corrugation (wave like wear) on that side's rail while the other side is normal.",
-      "A Side I or Side II result means that side of the track should be inspected.",
+      "Each file gets one result covering both rails, so a file is never rated for one rail only.",
+      "To interpret a result, look at the axle boxes, the averaged spectrum, the vibration and shock of a single box, and the rotating speed. Compare the two rails rather than trusting any one high reading, and check the speed first, because a faster train makes every box vibrate harder.",
     ],
   },
   shm: {
     title: "Understanding cumulative damage",
     points: [
-      "This value comes from Miner's linear cumulative damage rule applied to rstress cycles from the uploaded signal.",
+      "This value comes from Miner's linear cumulative damage rule applied to stress cycles from the uploaded signal.",
       "It ranges from 0 (no accumulated fatigue damage) up to 1.0 (the point at which fatigue failure is expected).",
       "The higher the value, the more of the component's fatigue life has already been used up, and the component should be inspected.",
     ],
@@ -67,21 +71,161 @@ function UnderstandingCard({ title, points, children }) {
   );
 }
 
-function DoorChart({ job }) {
+// Background caveats and what each status means, for the subsystems with no chart to put beside
+// them — the counterpart of ACV's car model disclaimer, in the same layout. Only SHM is graded
+// for severity, so these two explain their status labels instead.
+const SUBSYSTEM_NOTES = {
+  door: {
+    notes: [
+      {
+        term: "One continuous stream",
+        detail:
+          "Each file is a continuous recording of many door cycles back to back, so segments are found first and then classified.",
+      },
+      {
+        term: "Doors differ",
+        detail:
+          "Motor readings that are normal on one door can be abnormal on another, so slight resistance faults are easy to miss with a fixed threshold.",
+      },
+      {
+        term: "Open or close is not predicted",
+        detail: "Each segment is only rated Normal or Abnormal resistance, not labelled as opening or closing.",
+      },
+    ],
+    statuses: [
+      { term: "Normal", detail: "The door moved freely through the cycle." },
+      {
+        term: "Abnormal resistance",
+        detail:
+          "The motor met extra resistance, for example from a foreign object in the slide rail, a jammed rubber strip or a deformed door leaf. Repeated abnormal cycles can lead to door jamming and motor overload, so inspect that door.",
+      },
+    ],
+  },
+  rail_corrugation: {
+    notes: [
+      {
+        term: "Two rails, one recording",
+        detail:
+          "Side I and Side II are judged independently from the same recording: axle box positions 1, 3, 5 and 7 sit on the Side I rail, and 2, 4, 6 and 8 on the Side II rail.",
+      },
+      {
+        term: "One side at a time",
+        detail: "A file with corrugation on one side is reported as that side only, and the other side is normal.",
+      },
+      {
+        term: "Faults are rare",
+        detail:
+          "Corrugation is a small minority of the training files, so Side I and Side II results rest on far fewer examples than Normal.",
+      },
+    ],
+    statuses: [
+      { term: "Normal", detail: "Both rails are healthy." },
+      {
+        term: "Side I",
+        detail:
+          "Corrugation (wave like wear) on the Side I rail, while the Side II rail is normal. Inspect that side of the track.",
+      },
+      {
+        term: "Side II",
+        detail:
+          "Corrugation (wave like wear) on the Side II rail, while the Side I rail is normal. Inspect that side of the track.",
+      },
+    ],
+  },
+};
+
+function NotesList({ notes }) {
+  return (
+    <div>
+      <h4>Things to know</h4>
+      <dl className="car-model-list">
+        {notes.map(({ term, detail }) => (
+          <div key={term}>
+            <dt>{term}</dt>
+            <dd>{detail}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function StatusList({ statuses }) {
+  return (
+    <dl className="car-model-list">
+      {statuses.map(({ term, detail }) => (
+        <div key={term}>
+          {/* the same pill the History table and dashboards use, so a status maps by sight */}
+          <dt className="status-term">
+            <StatusBadge label={term} />
+          </dt>
+          <dd>{detail}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function SubsystemNotes({ notes, statuses }) {
+  return (
+    <div className="car-model-disclaimer">
+      <NotesList notes={notes} />
+      <div>
+        <h4>What each status means</h4>
+        <StatusList statuses={statuses} />
+      </div>
+    </div>
+  );
+}
+
+function DoorChart({ job, aggregate }) {
   const normal = job.rows.filter((r) => r.label !== "Abnormal resistance").length;
   const abnormal = job.rows.length - normal;
+  const fileName = job.input_files?.[0]?.filename;
+  // The backend rebuilds a run's signals from its saved upload the first time it is opened, so a
+  // run has none only if its file wasn't saved; that one keeps the plain timeline.
+  const telemetry = fileName ? job.summary?.telemetry?.[fileName] : undefined;
   return (
     <>
-      <UnderstandingCard {...UNDERSTANDING.door} />
-      <div className="stat-tiles">
-        <StatTile label="Segments detected" value={job.rows.length} />
-        <StatTile label="Normal" value={normal} />
-        <StatTile label="Abnormal resistance" value={abnormal} />
-      </div>
-      <div className="chart-card">
-        <h3>Segment timeline</h3>
-        <DoorTimeline rows={job.rows} />
-      </div>
+      <UnderstandingCard {...UNDERSTANDING.door}>
+        <SubsystemNotes {...SUBSYSTEM_NOTES.door} />
+      </UnderstandingCard>
+      {aggregate ? (
+        // No merged view: each file is a separate door stream, and stretching segments from
+        // different doors onto one time axis says nothing about any of them.
+        <p className="history-dashboard-note">
+          Each file is a separate door stream, so segments from different files aren&apos;t shown together.
+          Open a run&apos;s dashboard from the table below to see its signals and segments.
+        </p>
+      ) : (
+        <>
+          <div className="stat-tiles stat-tiles-fill">
+            <StatTile label="Total Segments Detected" value={job.rows.length} />
+            <StatTile label="Normal Segments" value={normal} />
+            <StatTile label="Abnormal Resistance Segments" value={abnormal} />
+          </div>
+          <div className="chart-card">
+            <h3>
+              {telemetry
+                ? `${fileName} door signals`
+                : fileName
+                  ? `${fileName} segment timeline`
+                  : "Segment timeline"}
+            </h3>
+            {telemetry ? (
+              <DoorTelemetry telemetry={telemetry} rows={job.rows} />
+            ) : (
+              <>
+                <DoorTimeline rows={job.rows} />
+                <p className="chart-caption">
+                  This run&apos;s signals aren&apos;t available (its file wasn&apos;t saved), so only the segments are
+                  shown. Upload the file again to see them.
+                </p>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -213,30 +357,67 @@ function AcvChart({ job, aggregate }) {
   );
 }
 
-function RailChart({ job }) {
+function RailChart({ job, aggregate }) {
   const counts = { Normal: 0, "Side I": 0, "Side II": 0 };
   job.rows.forEach((r) => {
     if (counts[r.label] !== undefined) counts[r.label] += 1;
   });
 
+  const fileName = job.input_files?.[0]?.filename;
+  // The backend rebuilds a run's axle-box signals from its saved upload the first time it is
+  // opened, so a run has none only if its file wasn't saved.
+  const telemetry = fileName ? job.summary?.telemetry?.[fileName] : undefined;
+
   return (
     <>
-      <UnderstandingCard {...UNDERSTANDING.rail_corrugation} />
-      <div className="stat-tiles">
-        {Object.entries(counts).map(([label, value]) => (
-          <StatTile key={label} label={label} value={value} />
-        ))}
-      </div>
-      <div className="chart-card">
-        <h3>Class distribution</h3>
-        <BarChart
-          data={Object.entries(counts).map(([label, value]) => ({
-            label,
-            value,
-            color: label === "Normal" ? "var(--status-normal)" : "var(--status-abnormal)",
-          }))}
-        />
-      </div>
+      <UnderstandingCard {...UNDERSTANDING.rail_corrugation}>
+        {aggregate ? (
+          // The status meanings sit beside the class distribution below, so the notes get the full width
+          <div className="car-model-disclaimer car-model-disclaimer-single">
+            <NotesList notes={SUBSYSTEM_NOTES.rail_corrugation.notes} />
+          </div>
+        ) : (
+          <SubsystemNotes {...SUBSYSTEM_NOTES.rail_corrugation} />
+        )}
+      </UnderstandingCard>
+      {aggregate ? (
+        // Unlike ACV and Door, every rail file is the same measurement of a different track
+        // section, so counting them together is meaningful.
+        <div className="rail-summary-row">
+          <div className="chart-card shm-hero-card rail-records-card">
+            <div className="shm-hero-value">{job.rows.length}</div>
+            <div className="shm-hero-label">Number of Records</div>
+          </div>
+          <div className="chart-card rail-class-card">
+            <h3 className="chart-card-header">Class distribution</h3>
+            <BarChart
+              data={Object.entries(counts).map(([label, value]) => ({
+                label,
+                value,
+                color: label === "Normal" ? "var(--status-normal)" : "var(--status-abnormal)",
+              }))}
+            />
+            <p className="chart-caption">
+              Each bar counts files with that result. Open a run&apos;s dashboard from the table below to
+              see its 64 axle boxes.
+            </p>
+          </div>
+          <div className="chart-card rail-status-card">
+            <h3 className="chart-card-header">What each status means</h3>
+            <StatusList statuses={SUBSYSTEM_NOTES.rail_corrugation.statuses} />
+          </div>
+        </div>
+      ) : telemetry ? (
+        <RailTelemetry telemetry={telemetry} />
+      ) : (
+        <div className="chart-card">
+          <h3>Axle-box signals</h3>
+          <p>
+            This run&apos;s signals aren&apos;t available (its file wasn&apos;t saved). Upload the file again to
+            see its 64 axle boxes.
+          </p>
+        </div>
+      )}
     </>
   );
 }

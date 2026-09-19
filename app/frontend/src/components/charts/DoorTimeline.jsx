@@ -3,7 +3,7 @@
  * (hyphen-separated, not zero-padded, e.g. "2023-7-5-0-0-3-760") or an ISO-parseable timestamp,
  * matching what the Door subsystem's output schema itself accepts (see docs/DESIGN.md Section 6).
  */
-function parseTimestamp(value) {
+export function parseTimestamp(value) {
   const parts = String(value).split("-");
   if (parts.length === 7) {
     const [year, month, day, hour, minute, second, ms] = parts.map(Number);

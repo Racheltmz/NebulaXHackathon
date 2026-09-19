@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from db import PredictionJob, PredictionRow, get_db
 from ml.export import rows_to_csv_bytes
+from ml.result import compute_result
 from ml.severity import compute_severity
 from ml.subsystems import SUBSYSTEMS
 from schemas import HistoryRowOut, InputFileInfo, JobSummaryOut
@@ -55,6 +56,7 @@ def list_history(
             summary={k: v for k, v in (job.summary or {}).items() if k != "telemetry"},
             created_at=job.created_at,
             severity=compute_severity(job.subsystem, rows_by_job[job.id]),
+            result=compute_result(job.subsystem, rows_by_job[job.id]),
         )
         for job in jobs
     ]

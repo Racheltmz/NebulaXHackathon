@@ -11,10 +11,14 @@ resistance" — this is not a real detection).
 """
 
 import io
+import logging
 
 import pandas as pd
 
 from .common import PredictionResult, UploadedFile
+from .door_telemetry import build_telemetry
+
+logger = logging.getLogger(__name__)
 
 EXPECTED_COLUMNS = 17
 
@@ -36,8 +40,14 @@ def validate(files: list[UploadedFile]) -> None:
 
 def predict(files: list[UploadedFile]) -> PredictionResult:
     rows = []
+    telemetry = {}
     for f in files:
         df = pd.read_csv(io.BytesIO(f.content))
+        # Display-only, so it must never fail the run — the segments below are what's being asked for.
+        try:
+            telemetry[f.filename] = build_telemetry(df)
+        except Exception:  # noqa: BLE001
+            logger.exception("Could not build door telemetry for %s", f.filename)
         time_col = df.columns[0]
         rows.append(
             {
@@ -48,5 +58,5 @@ def predict(files: list[UploadedFile]) -> PredictionResult:
             }
         )
 
-    summary = {"segments": len(rows), "abnormal": 0, "model": "stub"}
+    summary = {"segments": len(rows), "abnormal": 0, "telemetry": telemetry, "model": "stub"}
     return PredictionResult(rows=rows, summary=summary)
