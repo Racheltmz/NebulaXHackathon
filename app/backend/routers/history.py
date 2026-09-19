@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from db import PredictionJob, PredictionRow, get_db
 from ml.export import rows_to_csv_bytes
+from ml.result import compute_result
 from ml.severity import compute_severity
 from ml.subsystems import SUBSYSTEMS
 from schemas import HistoryRowOut, InputFileInfo, JobSummaryOut
@@ -51,9 +52,11 @@ def list_history(
             subsystem=job.subsystem,
             status=job.status,
             input_files=[InputFileInfo(**f) for f in job.input_files],
-            summary=job.summary,
+            # ACV's per-car telemetry is large and only the run dashboard plots it.
+            summary={k: v for k, v in (job.summary or {}).items() if k != "telemetry"},
             created_at=job.created_at,
             severity=compute_severity(job.subsystem, rows_by_job[job.id]),
+            result=compute_result(job.subsystem, rows_by_job[job.id]),
         )
         for job in jobs
     ]
@@ -96,11 +99,22 @@ def subsystem_dashboard(subsystem: str = Query(...), db: Session = Depends(get_d
     """Everything the per-subsystem dashboard on the History page charts: the latest prediction
     for every file that subsystem has been run on, plus how many runs that spans."""
     rows = _latest_rows(db, subsystem)
-    return {
+    dashboard = {
         "subsystem": subsystem,
         "runs": len({r.job_id for r in rows}),
         "rows": [_row_dict(r) for r in rows],
     }
+    if subsystem == "acv":
+        # Car model isn't a prediction_rows column — it lives on each run's summary. Runs from
+        # before it was recorded have none, so they map to null.
+        jobs = {
+            job.id: job
+            for job in db.query(PredictionJob).filter(PredictionJob.id.in_(list({r.job_id for r in rows})))
+        }
+        dashboard["car_models"] = {
+            r.file_id: (jobs[r.job_id].summary or {}).get("car_models", {}).get(r.file_id) for r in rows
+        }
+    return dashboard
 
 
 @router.get("/download")
@@ -145,6 +159,7 @@ def list_history_rows(subsystem_key: str, db: Session = Depends(get_db)):
     out = []
     for row, job in results:
         index, name, available = _match_input_file(job.input_files, row.file_id)
+        summary = job.summary or {}
         out.append(
             HistoryRowOut(
                 job_id=str(job.id),
@@ -159,6 +174,8 @@ def list_history_rows(subsystem_key: str, db: Session = Depends(get_db)):
                 input_file_index=index,
                 input_file_name=name,
                 input_file_available=available,
+                car_model=(summary.get("car_models") or {}).get(row.file_id),
+                train_number=(summary.get("train_numbers") or {}).get(row.file_id),
             )
         )
     return out

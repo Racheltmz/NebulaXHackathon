@@ -93,7 +93,7 @@ One row per "run the app once for a subsystem" — i.e. one row per history-tabl
 | `status` | text | `processing` \| `done` \| `failed` |
 | `input_files` | jsonb | list of `{filename, storage_path, size_bytes}` for each uploaded file |
 | `output_storage_path` | text | path to the generated `*_predictions.csv` in the `predictions` bucket |
-| `summary` | jsonb | small precomputed rollup for the history-row / dashboard header (e.g. door: `{segments: 42, abnormal: 5}`; rail: `{Normal: 60, "Side I": 3, "Side II": 5}`; shm: `{mean: 0.41, max: 0.91}`; acv: `{top_car: "03"}`) |
+| `summary` | jsonb | small precomputed rollup for the history-row / dashboard header (e.g. door: `{segments: 42, abnormal: 5}`; rail: `{Normal: 60, "Side I": 3, "Side II": 5}`; shm: `{mean: 0.41, max: 0.91}`; acv: `{top_car: "03", car_models: {"acv_case_01.xlsx": "A"}, train_numbers: {...}, telemetry: {"acv_case_01.xlsx": {...}}}` — `telemetry` is a ~90–200 KB downsampled copy of the file's readings for the run dashboard, carried by ACV, Door and Rail Corrugation summaries alike (per-car temperatures and modes, ml/acv_telemetry.py; the 16 door signals, ml/door_telemetry.py; per-axle-box envelopes and spectra for all 64 boxes, ml/rail_telemetry.py); the history list endpoint strips it, and Door/Rail runs saved before it existed have it rebuilt from the stored upload on first view (routers/jobs.py)) |
 | `error_message` | text, nullable | populated if `status = failed` |
 | `created_at` | timestamptz | |
 

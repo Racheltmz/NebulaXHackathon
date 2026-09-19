@@ -13,6 +13,7 @@ The model carries no weights of its own (it retrains in `fit()`), so it is fitte
 """
 
 import io
+import logging
 from pathlib import Path
 
 import joblib
@@ -20,6 +21,9 @@ import pandas as pd
 
 from . import featurize
 from .common import PredictionResult, UploadedFile
+from .rail_telemetry import build_telemetry
+
+logger = logging.getLogger(__name__)
 
 EXPECTED_COLUMNS = 129
 CLASSES = ("Normal", "Side I", "Side II")
@@ -30,8 +34,8 @@ _model = None
 
 
 def _load_model():
-    """Loaded once on first prediction, not at import, so a missing artifact surfaces as a clear
-    request-time error instead of taking the whole app down at startup."""
+    """Loaded on first prediction rather than at import, so a missing artifact surfaces as a
+    clear request-time error instead of taking the whole app down at startup."""
     global _model
     if _model is None:
         if not MODEL_PATH.exists():
@@ -59,10 +63,20 @@ def validate(files: list[UploadedFile]) -> None:
 
 def predict(files: list[UploadedFile]) -> PredictionResult:
     model = _load_model()
-    arrays = [featurize.rail_array(f.content) for f in files]
+    frames = [pd.read_csv(io.BytesIO(f.content)) for f in files]
+    arrays = [featurize.rail_array_from_frame(df) for df in frames]
     labels = [str(label) for label in model.predict(arrays)]
+
+    telemetry = {}
+    for f, df in zip(files, frames):
+        # Display-only, so it must never fail the run — the label above is what's being asked for.
+        try:
+            telemetry[f.filename] = build_telemetry(df)
+        except Exception:  # noqa: BLE001
+            logger.exception("Could not build rail telemetry for %s", f.filename)
 
     rows = [{"file_id": f.filename, "label": label} for f, label in zip(files, labels)]
     summary = {cls: labels.count(cls) for cls in CLASSES}
+    summary["telemetry"] = telemetry
     summary["model"] = "evolved classical (3x SVC vote)"
     return PredictionResult(rows=rows, summary=summary)

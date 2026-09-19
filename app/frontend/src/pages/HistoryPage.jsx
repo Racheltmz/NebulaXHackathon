@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 import Modal from "../components/Modal";
 import PreviewTable from "../components/PreviewTable";
@@ -33,18 +34,46 @@ function SeverityCell({ job }) {
   );
 }
 
+// The All tab's at-a-glance column: each run's own pill (backend ml/result.py), on one shared
+// colour scale (green normal, amber warning, red fault) so it can be scanned and sorted by colour.
+const RESULT_BADGE = { normal: "normal", warning: "elevated", fault: "abnormal" };
+const RESULT_RANK = { normal: 0, warning: 1, fault: 2 };
+
+function ResultCell({ job }) {
+  if (!job.result) return <span style={{ color: "var(--db-muted)" }}>—</span>;
+  return (
+    <span className={`badge ${RESULT_BADGE[job.result.tone]}`} title={job.result.detail}>
+      {job.result.label}
+    </span>
+  );
+}
+
 // Sort keys for the sortable columns. Predictions is an action button, so they have none.
 const SORT_KEYS = {
   subsystem: (job) => SUBSYSTEM_LABELS[job.subsystem] ?? job.subsystem,
   date: (job) => new Date(job.created_at).getTime(),
   status: (job) => job.status,
-  severity: (job) => SEVERITY_RANK[job.severity?.level] ?? -1, // ungradable runs (ACV) sort first
+  result: (job) => RESULT_RANK[job.result?.tone] ?? -1, // by colour; runs with no result rank lowest
   files: (job) => job.input_files[0]?.filename ?? "",
 };
 
 // Per-prediction table (a subsystem tab): one row per file/segment. The uploaded filename already
 // has its own column, so ACV/Rail/SHM only add their single output; Door adds its segment breakdown.
 // Door's operation (Open/Close) and n_rows aren't produced by the model or stored yet.
+// A link to the run's own dashboard page, for subsystems whose dashboard is per run (each file is
+// its own train / door stream, so there is nothing meaningful to merge across files). It's a link,
+// not a value, so there is nothing to sort by.
+const DASHBOARD_LINK_COLUMN = {
+  key: "dashboard",
+  header: "Dashboard",
+  sortable: false,
+  render: (r) => (
+    <Link className="link-button" to={`/jobs/${r.job_id}`}>
+      View dashboard →
+    </Link>
+  ),
+};
+
 const PREDICTION_COLUMNS = {
   door: [
     {
@@ -54,17 +83,29 @@ const PREDICTION_COLUMNS = {
       render: (r) => `${r.start_time} → ${r.end_time}`,
     },
     { key: "label", header: "Status", sortValue: (r) => r.label ?? "", render: (r) => <StatusBadge label={r.label} /> },
+    DASHBOARD_LINK_COLUMN,
   ],
   acv: [
+    // Car model and train number come from the file's own columns; runs from before they were
+    // recorded have none.
+    { key: "car_model", header: "Car model", sortValue: (r) => r.car_model ?? "", render: (r) => r.car_model ?? "—" },
+    {
+      key: "train_number",
+      header: "Train number",
+      sortValue: (r) => r.train_number ?? "",
+      render: (r) => r.train_number ?? "—",
+    },
     {
       key: "cars",
       header: "Ranked cars (most → least likely)",
       sortValue: (r) => r.ranked_cars ?? "",
       render: (r) => r.ranked_cars,
     },
+    DASHBOARD_LINK_COLUMN,
   ],
   rail_corrugation: [
     { key: "label", header: "Prediction", sortValue: (r) => r.label ?? "", render: (r) => <StatusBadge label={r.label} /> },
+    DASHBOARD_LINK_COLUMN,
   ],
   shm: [
     {
@@ -108,16 +149,15 @@ function InputFilesCell({ job, onPreview }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {job.input_files.map((f, index) =>
         f.storage_path ? (
-          <div key={index} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span>{f.filename}</span>
-            <button
-              className="link-button"
-              type="button"
-              onClick={() => onPreview({ type: "input", jobId: job.id, index, filename: f.filename })}
-            >
-              Preview
-            </button>
-          </div>
+          <button
+            key={index}
+            className="link-button"
+            type="button"
+            title="Preview this file"
+            onClick={() => onPreview({ type: "input", jobId: job.id, index, filename: f.filename })}
+          >
+            {f.filename}
+          </button>
         ) : (
           <span key={index} style={{ color: "var(--db-muted)" }} title="Not saved to storage for this run">
             {f.filename} (unavailable)
@@ -138,35 +178,37 @@ function RowFileCell({ row, onPreview }) {
     );
   }
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <span>{row.input_file_name}</span>
-      <button
-        className="link-button"
-        type="button"
-        onClick={() =>
-          onPreview({
-            type: "input",
-            jobId: row.job_id,
-            index: row.input_file_index,
-            filename: row.input_file_name,
-          })
-        }
-      >
-        Preview
-      </button>
-    </div>
+    <button
+      className="link-button"
+      type="button"
+      title="Preview this file"
+      onClick={() =>
+        onPreview({
+          type: "input",
+          jobId: row.job_id,
+          index: row.input_file_index,
+          filename: row.input_file_name,
+        })
+      }
+    >
+      {row.input_file_name}
+    </button>
   );
 }
 
 export default function HistoryPage() {
   const [jobs, setJobs] = useState([]);
   const [rows, setRows] = useState(null); // per-prediction rows for the selected subsystem
-  const [filter, setFilter] = useState(null);
+  // The selected subsystem lives in the URL (/history?subsystem=acv) so a run dashboard can link
+  // straight back to its tab, and the browser's Back button returns to the same tab too.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const subsystemParam = searchParams.get("subsystem");
+  const filter = Object.hasOwn(SUBSYSTEM_LABELS, subsystemParam) ? subsystemParam : null;
   const [error, setError] = useState(null);
-  const [dashboard, setDashboard] = useState(null); // { runs, rows } for the selected subsystem
+  const [loadedDashboard, setDashboard] = useState(null); // { subsystem, runs, rows } as last fetched
   const [dashboardError, setDashboardError] = useState(null);
   const [sort, setSort] = useState({ column: "date", direction: "desc" });
-  const [downloadKey, setDownloadKey] = useState("door");
+  const [downloadKey, setDownloadKey] = useState(filter ?? ""); // follows the selected tab; empty on All
   const [downloadError, setDownloadError] = useState(null);
 
   const [preview, setPreview] = useState(null); // { type: "input" | "predictions", jobId, ... }
@@ -241,6 +283,11 @@ export default function HistoryPage() {
   }, [jobs, sort]);
 
   const predictionColumns = filter ? PREDICTION_COLUMNS[filter] : [];
+  // Only SHM is graded for severity (backend ml/severity.py returns None for everything else):
+  // its output is a damage magnitude. Door, Rail Corrugation and ACV output a status or a
+  // ranking, which is shown as it is, so their tables have no severity column.
+  const showSeverity = filter === "shm";
+  const leadColumnCount = showSeverity ? 3 : 2; // run date, [severity], uploaded file
 
   const sortedRows = useMemo(() => {
     if (!rows) return [];
@@ -251,19 +298,27 @@ export default function HistoryPage() {
     return [...rows].sort((a, b) => sign * compareValues(keyFn(a), keyFn(b)));
   }, [rows, sort, predictionColumns]);
 
-  const selectFilter = (key) => {
-    setFilter(key);
+  // Whenever the tab changes (a click, or the browser's Back/Forward), the download dropdown follows
+  // it and the sort resets to newest first.
+  useEffect(() => {
+    setDownloadKey(filter ?? "");
     setSort({ column: "date", direction: "desc" });
-  };
+  }, [filter]);
+
+  // replace, so flicking between tabs doesn't pile up history entries for Back to wade through
+  const selectFilter = (key) => setSearchParams(key ? { subsystem: key } : {}, { replace: true });
 
   const handleSort = (column) =>
     setSort((prev) =>
       prev.column === column
         ? { column, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { column, direction: "asc" }
+        : { column, direction: column === "result" ? "desc" : "asc" } // colour column: worst (red) first
     );
 
   const Chart = filter ? CHARTS[filter] : null;
+  // After switching tabs the previous tab's data is still in state for one render. Charts must
+  // never be handed another subsystem's rows (e.g. Rail rows have no `value`, which crashes SHM's).
+  const dashboard = loadedDashboard?.subsystem === filter ? loadedDashboard : null;
 
   const closePreview = () => setPreview(null);
 
@@ -283,14 +338,17 @@ export default function HistoryPage() {
           <p>One CSV per subsystem covering all its runs, in the submission format (goes into predictions.zip).</p>
         </div>
         <select value={downloadKey} onChange={(e) => setDownloadKey(e.target.value)} aria-label="Subsystem to download">
+          <option value="" disabled>
+            Select a subsystem
+          </option>
           {Object.entries(SUBSYSTEM_LABELS).map(([key, label]) => (
             <option key={key} value={key}>
               {label}
             </option>
           ))}
         </select>
-        <button className="btn-secondary" type="button" onClick={handleDownload}>
-          Download {downloadKey}_predictions.csv
+        <button className="btn-secondary" type="button" onClick={handleDownload} disabled={!downloadKey}>
+          {downloadKey ? `Download ${downloadKey}_predictions.csv` : "Download predictions.csv"}
         </button>
       </div>
       {downloadError && <div className="error-banner">{downloadError}</div>}
@@ -315,7 +373,7 @@ export default function HistoryPage() {
 
       {filter ? (
         <section className="history-dashboard">
-          <h2>{SUBSYSTEM_LABELS[filter]} dashboard</h2>
+          <h2>{SUBSYSTEM_LABELS[filter]} Inspection Insights</h2>
           {dashboard && (
             <p className="history-dashboard-note">
               {dashboard.rows.length} {filter === "door" ? "segment(s)" : "file(s)"} across {dashboard.runs} run(s)
@@ -326,7 +384,7 @@ export default function HistoryPage() {
           {!dashboard && !dashboardError && <p>Loading…</p>}
           {dashboard &&
             (dashboard.rows.length > 0 ? (
-              <Chart job={{ rows: dashboard.rows, summary: {} }} aggregate />
+              <Chart job={{ rows: dashboard.rows, summary: { car_models: dashboard.car_models } }} aggregate />
             ) : (
               <p>No {SUBSYSTEM_LABELS[filter]} runs yet.</p>
             ))}
@@ -343,26 +401,34 @@ export default function HistoryPage() {
                 <SortableTh column="date" sort={sort} onSort={handleSort}>
                   Run date
                 </SortableTh>
-                <SortableTh column="severity" sort={sort} onSort={handleSort}>
-                  Severity
-                </SortableTh>
+                {showSeverity && (
+                  <SortableTh column="severity" sort={sort} onSort={handleSort}>
+                    Severity
+                  </SortableTh>
+                )}
                 <SortableTh column="files" sort={sort} onSort={handleSort}>
                   Uploaded File
                 </SortableTh>
-                {predictionColumns.map((c) => (
-                  <SortableTh key={c.key} column={`pred:${c.key}`} sort={sort} onSort={handleSort}>
-                    {c.header}
-                  </SortableTh>
-                ))}
+                {predictionColumns.map((c) =>
+                  c.sortable === false ? (
+                    <th key={c.key}>{c.header}</th>
+                  ) : (
+                    <SortableTh key={c.key} column={`pred:${c.key}`} sort={sort} onSort={handleSort}>
+                      {c.header}
+                    </SortableTh>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
               {sortedRows.map((row, i) => (
                 <tr key={`${row.job_id}-${i}`}>
                   <td>{new Date(row.created_at).toLocaleString()}</td>
-                  <td>
-                    <SeverityCell job={row} />
-                  </td>
+                  {showSeverity && (
+                    <td>
+                      <SeverityCell job={row} />
+                    </td>
+                  )}
                   <td>
                     <RowFileCell row={row} onPreview={setPreview} />
                   </td>
@@ -373,14 +439,14 @@ export default function HistoryPage() {
               ))}
               {rows !== null && rows.length === 0 && (
                 <tr>
-                  <td colSpan={3 + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
+                  <td colSpan={leadColumnCount + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
                     No {SUBSYSTEM_LABELS[filter]} runs yet.
                   </td>
                 </tr>
               )}
               {rows === null && !error && (
                 <tr>
-                  <td colSpan={3 + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
+                  <td colSpan={leadColumnCount + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
                     Loading…
                   </td>
                 </tr>
@@ -402,8 +468,8 @@ export default function HistoryPage() {
               <SortableTh column="status" sort={sort} onSort={handleSort}>
                 Status
               </SortableTh>
-              <SortableTh column="severity" sort={sort} onSort={handleSort}>
-                Severity
+              <SortableTh column="result" sort={sort} onSort={handleSort}>
+                Result
               </SortableTh>
               <SortableTh column="files" sort={sort} onSort={handleSort}>
                 Uploaded Files
@@ -420,7 +486,7 @@ export default function HistoryPage() {
                   <span className={`badge ${job.status === "done" ? "normal" : "abnormal"}`}>{job.status}</span>
                 </td>
                 <td>
-                  <SeverityCell job={job} />
+                  <ResultCell job={job} />
                 </td>
                 <td>
                   <InputFilesCell job={job} onPreview={setPreview} />

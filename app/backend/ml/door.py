@@ -21,6 +21,7 @@ The model carries no weights of its own (it retrains in `fit()`), so it is fitte
 """
 
 import io
+import logging
 from pathlib import Path
 
 import joblib
@@ -28,6 +29,9 @@ import pandas as pd
 
 from . import featurize
 from .common import PredictionResult, UploadedFile
+from .door_telemetry import build_telemetry
+
+logger = logging.getLogger(__name__)
 
 EXPECTED_COLUMNS = 17
 ABNORMAL = "Abnormal resistance"
@@ -69,8 +73,16 @@ def validate(files: list[UploadedFile]) -> None:
 def predict(files: list[UploadedFile]) -> PredictionResult:
     model = _load_model()
     rows = []
+    telemetry = {}
     for f in files:
         df = pd.read_csv(io.BytesIO(f.content))
+
+        # Display-only, so it must never fail the run — the segments below are what's being asked for.
+        try:
+            telemetry[f.filename] = build_telemetry(df)
+        except Exception:  # noqa: BLE001
+            logger.exception("Could not build door telemetry for %s", f.filename)
+
         bounds = featurize.door_segment_bounds(df)
         arrays = featurize.door_arrays_from_bounds(df, bounds)
 
@@ -98,6 +110,7 @@ def predict(files: list[UploadedFile]) -> PredictionResult:
     summary = {
         "segments": len(rows),
         "abnormal": abnormal,
+        "telemetry": telemetry,
         "model": "gap segmentation + evolved classical SVC",
     }
     return PredictionResult(rows=rows, summary=summary)

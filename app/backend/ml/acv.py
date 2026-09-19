@@ -17,6 +17,7 @@ continuous fault score per car; ranking them descending gives `ranked_cars`.
 """
 
 import io
+import logging
 import re
 from pathlib import Path
 
@@ -25,7 +26,10 @@ import numpy as np
 import pandas as pd
 
 from . import featurize
+from .acv_telemetry import build_telemetry
 from .common import PredictionResult, UploadedFile
+
+logger = logging.getLogger(__name__)
 
 CAR_COLUMN_RE = re.compile(r"Car\s*(\d+)\s*-")
 
@@ -61,13 +65,32 @@ def validate(files: list[UploadedFile]) -> None:
             )
 
 
+def _first_value(df: pd.DataFrame, column: str) -> str | None:
+    """A file-level identifier column ('Car model', 'Train number') — constant within a file, so the
+    first non-empty value is the file's. None if the column is absent or empty."""
+    if column not in df.columns:
+        return None
+    values = df[column].dropna().astype(str).str.strip()
+    return values.iloc[0] if len(values) and values.iloc[0] else None
+
+
 def predict(files: list[UploadedFile]) -> PredictionResult:
     model = _load_model()
     rows = []
     top_cars = []
+    car_models = {}
+    train_numbers = {}
+    telemetry = {}
     for f in files:
-        # sheet_name=0 because the held-out test file's sheet is named in Chinese.
-        df = pd.read_excel(io.BytesIO(f.content), sheet_name=0)
+        # Read the workbook once and serve the ranking, the identifiers and the telemetry from
+        # that one frame — these files run to tens of MB, so a re-read per consumer is costly.
+        # sheet_name=0 because the held-out test file's sheet is named in Chinese, and
+        # "Train number" as text because pandas would otherwise turn "0620" into 620.
+        df = pd.read_excel(io.BytesIO(f.content), sheet_name=0, dtype={"Train number": str})
+
+        car_models[f.filename] = _first_value(df, "Car model")
+        train_numbers[f.filename] = _first_value(df, "Train number")
+
         cars, arrays = featurize.acv_case_arrays(df)
         scores = np.asarray(model.predict(arrays), dtype=float)
         # Every car in the file is listed: one missing from `ranked_cars` scores 0 under the
@@ -77,9 +100,20 @@ def predict(files: list[UploadedFile]) -> PredictionResult:
         if order:
             top_cars.append(order[0])
 
+        # Display-only, so it must never fail the run — the ranking above is what's being asked for.
+        try:
+            telemetry[f.filename] = build_telemetry(df)
+        except Exception:  # noqa: BLE001
+            logger.exception("Could not build ACV telemetry for %s", f.filename)
+
+    # Kept in the summary, not the rows: rows map onto the exported acv_predictions.csv, which is
+    # just file_id + ranked_cars, and onto prediction_rows columns that have no car_model.
     summary = {
         "files": len(rows),
         "top_car": top_cars[0] if top_cars else None,
+        "car_models": car_models,
+        "train_numbers": train_numbers,
+        "telemetry": telemetry,
         "model": "evolved classical (linear + retrieval + centroid)",
     }
     return PredictionResult(rows=rows, summary=summary)

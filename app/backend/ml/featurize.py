@@ -22,9 +22,13 @@ RAIL_SIDE_I = [0, 2, 4, 6]
 RAIL_SIDE_II = [1, 3, 5, 7]
 
 
-def rail_array(content: bytes) -> np.ndarray:
-    """One recording -> [5, T]: speed, Side-I vib, Side-I shock, Side-II vib, Side-II shock."""
-    a = pd.read_csv(io.BytesIO(content)).to_numpy(np.float32)
+def rail_array_from_frame(df: pd.DataFrame) -> np.ndarray:
+    """One recording -> [5, T]: speed, Side-I vib, Side-I shock, Side-II vib, Side-II shock.
+
+    Takes an already-parsed frame so a caller that also needs the raw rows (the dashboard
+    telemetry does) parses the file once — these recordings are ~17 MB each.
+    """
+    a = df.to_numpy(np.float32)
     v = a[:, 1:].reshape(len(a), 8, 8, 2)
     return np.stack([
         a[:, 0],
@@ -33,6 +37,11 @@ def rail_array(content: bytes) -> np.ndarray:
         v[:, :, RAIL_SIDE_II, 0].mean((1, 2)),
         v[:, :, RAIL_SIDE_II, 1].mean((1, 2)),
     ])
+
+
+def rail_array(content: bytes) -> np.ndarray:
+    """As `rail_array_from_frame`, straight from file bytes."""
+    return rail_array_from_frame(pd.read_csv(io.BytesIO(content)))
 
 
 # ---------------------------------------------------------------- SHM
@@ -82,14 +91,22 @@ def door_arrays_from_bounds(df: pd.DataFrame, bounds) -> list[np.ndarray]:
 
 def door_segment_arrays(df: pd.DataFrame, segments) -> list[np.ndarray]:
     """One [C, T] array per (start_time, end_time) pair — used when boundaries are already
-    known, as they are for the labelled training segments."""
-    t = df.Datetime.map(door_timestamp).to_numpy()
+    known, as they are for the labelled training segments.
+
+    Boundaries are located by exact match on the `Datetime` string rather than by comparing
+    `door_timestamp` values. That encoding zero-pads each field to a *minimum* of two digits, so
+    a millisecond field of 700 occupies three digits where 20 occupies two, and the concatenated
+    integers stop being ordered by time. Slicing on them returned segments of 0 to 12,923 rows
+    where the answer file says 137 to 190 — and the model would then be fitted on windows quite
+    unlike the ones `door_segment_bounds` hands it at prediction time.
+    """
+    row_of = {str(dt): i for i, dt in enumerate(df.Datetime)}
     cols = [c for c in df.columns if c != "Datetime"]
+    block = df[cols].apply(pd.to_numeric, errors="coerce").fillna(0).to_numpy(np.float32)
     out = []
     for start, end in segments:
-        m = (t >= door_timestamp(start)) & (t <= door_timestamp(end))
-        z = df.loc[m, cols].apply(pd.to_numeric, errors="coerce").fillna(0).to_numpy(np.float32).T
-        out.append(z)
+        a, b = row_of[str(start)], row_of[str(end)]
+        out.append(block[a : b + 1].T)
     return out
 
 

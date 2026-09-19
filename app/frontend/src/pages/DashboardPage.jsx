@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import ResultsTable from "../components/ResultsTable";
 import { CHARTS } from "../components/SubsystemCharts";
@@ -24,13 +24,25 @@ export default function DashboardPage() {
       .catch((err) => setError(err.response?.data?.detail || err.message));
   }, [jobId]);
 
-  if (error) return <div className="page-container error-banner">{error}</div>;
+  if (error) {
+    return (
+      <div className="page-container">
+        <Link className="back-link" to="/history">
+          ← Back to History
+        </Link>
+        <div className="error-banner">{error}</div>
+      </div>
+    );
+  }
   if (!job) return <div className="page-loading">Loading…</div>;
 
   const ChartComponent = CHARTS[job.subsystem];
 
   return (
     <div className="page-container dashboard-page-wide">
+      <Link className="back-link" to={`/history?subsystem=${job.subsystem}`}>
+        ← Back to {LABELS[job.subsystem] ?? job.subsystem} history
+      </Link>
       <div className="dashboard-header">
         <div>
           <h1>{LABELS[job.subsystem] ?? job.subsystem} run</h1>
