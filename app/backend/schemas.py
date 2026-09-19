@@ -54,3 +54,5 @@ class HistoryRowOut(PredictionRowOut):
     input_file_index: int | None = None
     input_file_name: str | None = None
     input_file_available: bool = False
+    car_model: str | None = None  # ACV only, from the run's summary
+    train_number: str | None = None  # ACV only, from the run's summary

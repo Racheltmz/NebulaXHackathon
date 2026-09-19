@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import Modal from "../components/Modal";
 import PreviewTable from "../components/PreviewTable";
@@ -56,11 +57,31 @@ const PREDICTION_COLUMNS = {
     { key: "label", header: "Status", sortValue: (r) => r.label ?? "", render: (r) => <StatusBadge label={r.label} /> },
   ],
   acv: [
+    // Car model and train number come from the file's own columns; runs from before they were
+    // recorded have none.
+    { key: "car_model", header: "Car model", sortValue: (r) => r.car_model ?? "", render: (r) => r.car_model ?? "—" },
+    {
+      key: "train_number",
+      header: "Train number",
+      sortValue: (r) => r.train_number ?? "",
+      render: (r) => r.train_number ?? "—",
+    },
     {
       key: "cars",
       header: "Ranked cars (most → least likely)",
       sortValue: (r) => r.ranked_cars ?? "",
       render: (r) => r.ranked_cars,
+    },
+    // A link, not a value, so nothing to sort by.
+    {
+      key: "dashboard",
+      header: "Dashboard",
+      sortable: false,
+      render: (r) => (
+        <Link className="link-button" to={`/jobs/${r.job_id}`}>
+          View dashboard →
+        </Link>
+      ),
     },
   ],
   rail_corrugation: [
@@ -241,6 +262,11 @@ export default function HistoryPage() {
   }, [jobs, sort]);
 
   const predictionColumns = filter ? PREDICTION_COLUMNS[filter] : [];
+  // ACV only ranks cars — it gives no fault magnitude to grade (backend ml/severity.py returns
+  // None for it), so its table has no severity column. The most urgent action is always to check
+  // the top ranked car.
+  const showSeverity = filter !== "acv";
+  const leadColumnCount = showSeverity ? 3 : 2; // run date, [severity], uploaded file
 
   const sortedRows = useMemo(() => {
     if (!rows) return [];
@@ -326,7 +352,7 @@ export default function HistoryPage() {
           {!dashboard && !dashboardError && <p>Loading…</p>}
           {dashboard &&
             (dashboard.rows.length > 0 ? (
-              <Chart job={{ rows: dashboard.rows, summary: {} }} aggregate />
+              <Chart job={{ rows: dashboard.rows, summary: { car_models: dashboard.car_models } }} aggregate />
             ) : (
               <p>No {SUBSYSTEM_LABELS[filter]} runs yet.</p>
             ))}
@@ -343,26 +369,34 @@ export default function HistoryPage() {
                 <SortableTh column="date" sort={sort} onSort={handleSort}>
                   Run date
                 </SortableTh>
-                <SortableTh column="severity" sort={sort} onSort={handleSort}>
-                  Severity
-                </SortableTh>
+                {showSeverity && (
+                  <SortableTh column="severity" sort={sort} onSort={handleSort}>
+                    Severity
+                  </SortableTh>
+                )}
                 <SortableTh column="files" sort={sort} onSort={handleSort}>
                   Uploaded File
                 </SortableTh>
-                {predictionColumns.map((c) => (
-                  <SortableTh key={c.key} column={`pred:${c.key}`} sort={sort} onSort={handleSort}>
-                    {c.header}
-                  </SortableTh>
-                ))}
+                {predictionColumns.map((c) =>
+                  c.sortable === false ? (
+                    <th key={c.key}>{c.header}</th>
+                  ) : (
+                    <SortableTh key={c.key} column={`pred:${c.key}`} sort={sort} onSort={handleSort}>
+                      {c.header}
+                    </SortableTh>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
               {sortedRows.map((row, i) => (
                 <tr key={`${row.job_id}-${i}`}>
                   <td>{new Date(row.created_at).toLocaleString()}</td>
-                  <td>
-                    <SeverityCell job={row} />
-                  </td>
+                  {showSeverity && (
+                    <td>
+                      <SeverityCell job={row} />
+                    </td>
+                  )}
                   <td>
                     <RowFileCell row={row} onPreview={setPreview} />
                   </td>
@@ -373,14 +407,14 @@ export default function HistoryPage() {
               ))}
               {rows !== null && rows.length === 0 && (
                 <tr>
-                  <td colSpan={3 + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
+                  <td colSpan={leadColumnCount + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
                     No {SUBSYSTEM_LABELS[filter]} runs yet.
                   </td>
                 </tr>
               )}
               {rows === null && !error && (
                 <tr>
-                  <td colSpan={3 + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
+                  <td colSpan={leadColumnCount + predictionColumns.length} style={{ textAlign: "center", color: "var(--db-muted)" }}>
                     Loading…
                   </td>
                 </tr>

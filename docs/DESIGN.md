@@ -93,7 +93,7 @@ One row per "run the app once for a subsystem" — i.e. one row per history-tabl
 | `status` | text | `processing` \| `done` \| `failed` |
 | `input_files` | jsonb | list of `{filename, storage_path, size_bytes}` for each uploaded file |
 | `output_storage_path` | text | path to the generated `*_predictions.csv` in the `predictions` bucket |
-| `summary` | jsonb | small precomputed rollup for the history-row / dashboard header (e.g. door: `{segments: 42, abnormal: 5}`; rail: `{Normal: 60, "Side I": 3, "Side II": 5}`; shm: `{mean: 0.41, max: 0.91}`; acv: `{top_car: "03"}`) |
+| `summary` | jsonb | small precomputed rollup for the history-row / dashboard header (e.g. door: `{segments: 42, abnormal: 5}`; rail: `{Normal: 60, "Side I": 3, "Side II": 5}`; shm: `{mean: 0.41, max: 0.91}`; acv: `{top_car: "03", car_models: {"acv_case_01.xlsx": "A"}, train_numbers: {...}, telemetry: {"acv_case_01.xlsx": {...}}}` — `telemetry` is a ~90 KB downsampled per-car copy of the file's temperatures and modes for the run dashboard (ml/acv_telemetry.py); the history list endpoint strips it) |
 | `error_message` | text, nullable | populated if `status = failed` |
 | `created_at` | timestamptz | |
 

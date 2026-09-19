@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import apiClient from "../lib/apiClient";
 import BarChart from "./charts/BarChart";
 import DoorTimeline from "./charts/DoorTimeline";
+import AcvTelemetry from "./charts/AcvTelemetry";
 import TrainDiagram, { carsFromRanking } from "./charts/TrainDiagram";
 import { InfoIcon } from "./icons/NavIcons";
 import StatTile from "./StatTile";
@@ -47,7 +48,7 @@ const UNDERSTANDING = {
   },
 };
 
-function UnderstandingCard({ title, points }) {
+function UnderstandingCard({ title, points, children }) {
   return (
     <div className="chart-card">
       <h3 className="title-with-icon">
@@ -61,6 +62,7 @@ function UnderstandingCard({ title, points }) {
           <li key={point}>{point}</li>
         ))}
       </ul>
+      {children}
     </div>
   );
 }
@@ -84,6 +86,90 @@ function DoorChart({ job }) {
   );
 }
 
+// The three car models in the provided ACV data (train type, from each file's "Car model"
+// column — not to be confused with the 8 cars of a train). Order is the count plot's x-axis order.
+const CAR_MODELS = [
+  { id: "A", description: "8 parameters per car, sampled every 30 seconds, including an outdoor average temperature." },
+  {
+    id: "B",
+    description:
+      "63 parameters per car, sampled every 10 seconds. A far richer set, including refrigeration pressures and compressor faults.",
+  },
+  {
+    id: "C",
+    description: "The same 8 parameters as model A every 30 seconds, but outdoor temperature is a raw sensor reading rather than an average.",
+  },
+];
+const UNKNOWN_CAR_MODEL = "Unknown";
+
+// Files per car model. Known models are always listed, even at zero, so the plot shows the full
+// set; a model outside A–C (or a run recorded before car model was saved) still gets its own bar.
+function countCarModels(carModels) {
+  const counts = new Map(CAR_MODELS.map(({ id }) => [id, 0]));
+  Object.values(carModels ?? {}).forEach((model) => {
+    const id = model ?? UNKNOWN_CAR_MODEL;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  });
+  if (counts.get(UNKNOWN_CAR_MODEL) === 0) counts.delete(UNKNOWN_CAR_MODEL);
+  return [...counts].map(([id, value]) => ({
+    label: id === UNKNOWN_CAR_MODEL ? id : `Model ${id}`,
+    value,
+    color: value > 0 ? "var(--fe-cobalt)" : "var(--fe-edge)",
+  }));
+}
+
+function AcvUnderstanding({ carModels, fileCount }) {
+  return (
+    <UnderstandingCard {...UNDERSTANDING.acv}>
+      <div className="car-model-disclaimer">
+        <div>
+          <h4>Disclaimer: car models differ</h4>
+          <p>
+            The data comes from three car models, and they don&apos;t record the same things. A ranking
+            is only comparable with other files of the same model, and models B and C have far fewer
+            labelled cases to learn from than model A.
+          </p>
+          <dl className="car-model-list">
+            {CAR_MODELS.map(({ id, description }) => (
+              <div key={id}>
+                <dt>Model {id}</dt>
+                <dd>{description}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <div>
+          <h4>
+            Files by car model{" "}
+            <span className="heading-note">
+              ({fileCount} {fileCount === 1 ? "File" : "Files"} Analysed)
+            </span>
+          </h4>
+          <BarChart data={countCarModels(carModels)} />
+          <p className="chart-caption">Each bar counts the files analysed for that car model.</p>
+        </div>
+      </div>
+    </UnderstandingCard>
+  );
+}
+
+// Runs from before telemetry was recorded have none saved; a run whose file had no usable Time
+// column has a null entry.
+function AcvTelemetrySection({ telemetry, fileId, ranked }) {
+  const forFile = telemetry?.[fileId];
+  if (forFile) return <AcvTelemetry telemetry={forFile} rankedCars={ranked} />;
+  return (
+    <div className="chart-card">
+      <h3>Car telemetry</h3>
+      <p>
+        {telemetry === undefined
+          ? "Telemetry wasn't saved for this run. Upload the file again to see it."
+          : "Telemetry couldn't be built from this file."}
+      </p>
+    </div>
+  );
+}
+
 function AcvChart({ job, aggregate }) {
   if (aggregate) {
     // No chart here on purpose. Each file is its own train, and a car identifier is only
@@ -93,10 +179,7 @@ function AcvChart({ job, aggregate }) {
     // prediction (Predict page and run dashboard).
     return (
       <>
-        <UnderstandingCard {...UNDERSTANDING.acv} />
-        <div className="stat-tiles">
-          <StatTile label="Files Analysed" value={job.rows.length} />
-        </div>
+        <AcvUnderstanding carModels={job.summary?.car_models} fileCount={job.rows.length} />
         <p className="history-dashboard-note">
           Each file is a separate trainset, so car rankings aren&apos;t comparable between files and
           aren&apos;t summarised here. See each file&apos;s ranking in the table below, or open a run
@@ -113,18 +196,17 @@ function AcvChart({ job, aggregate }) {
 
   return (
     <>
-      <UnderstandingCard {...UNDERSTANDING.acv} />
-      <div className="stat-tiles">
-        <StatTile label="Files Analysed" value={job.rows.length} />
-        <StatTile
-          label="Most likely faulty (first file)"
-          value={carsFromRanking(Object.values(byFile)[0])[0]?.id ?? "—"}
-        />
-      </div>
+      <AcvUnderstanding carModels={job.summary?.car_models} fileCount={job.rows.length} />
       {Object.entries(byFile).map(([fileId, ranked]) => (
-        <div className="chart-card" key={fileId}>
-          <h3>{fileId} — cars ranked most → least likely faulty</h3>
-          <TrainDiagram cars={carsFromRanking(ranked)} />
+        <div key={fileId}>
+          <div className="chart-card">
+            <h3>
+              {fileId} — cars ranked most → least likely faulty
+              <span className="highlight-pill">Most likely faulty: Car {carsFromRanking(ranked)[0]?.id ?? "—"}</span>
+            </h3>
+            <TrainDiagram cars={carsFromRanking(ranked)} />
+          </div>
+          <AcvTelemetrySection telemetry={job.summary?.telemetry} fileId={fileId} ranked={ranked} />
         </div>
       ))}
     </>
