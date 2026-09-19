@@ -13,3 +13,13 @@ dist/
 # Environment variables
 .env
 .venv/
+
+# Raw PS3 dataset and the organisers' example submission — excluded from the submission per
+# PS3/01_Problem_Statement_3_Specifications.md ("Do not include the 04_Example_Submission/
+# folder's contents or any of the raw dataset in your submission"). Kept on disk for local dev
+# (scripts/fit_models.py reads from here); re-fetch from the organisers' repo if missing.
+PS3/02_Datasets/
+PS3/04_Example_Submission/
+
+# Excel lock files left behind by an open workbook — not data.
+~$*.xlsx
