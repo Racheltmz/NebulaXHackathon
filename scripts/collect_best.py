@@ -6,14 +6,15 @@ lag the true best. This scans every checkpoint archive under each run and
 picks the highest `combined_score` (ties broken by `traintest_metric`).
 
 Writes, per task:
-  <task>/classical.py, <task>/deep.py          best program, byte-for-byte as evaluated
+  <task>/classical.py, <task>/deep.py, <task>/classical_nx.py   best program, byte-for-byte as evaluated
   <task>/results_{classical,deep}.json         its metrics + provenance
   <task>/checkpoints/{classical,deep}_top<K>.jsonl.gz   top-K programs (no embeddings)
 and docs/results_summary.json.
 
 Usage:
   python scripts/collect_best.py --runs-dir ~/projects/ps3-evolve [--top-k 10]
-Run dirs are expected as <runs-dir>/<task> (classical) and <runs-dir>/<task>_gpu (deep).
+Run dirs are expected as <runs-dir>/<task> (classical), <runs-dir>/<task>_gpu (deep) and
+<runs-dir>/<task>_nx (classical seeded from the nebulax feature pipeline; rail and shm only).
 """
 from __future__ import annotations
 
@@ -24,7 +25,7 @@ import json
 from pathlib import Path
 
 TASKS = ["door", "acv", "rail", "shm"]
-KINDS = {"classical": "", "deep": "_gpu"}
+KINDS = {"classical": "", "deep": "_gpu", "classical_nx": "_nx"}  # _nx runs exist for rail/shm only
 METRIC_KEYS = ("combined_score", "traintest_metric", "cv3_metric", "cv5_metric", "code_length")
 
 
@@ -72,6 +73,8 @@ def main() -> None:
     for task in TASKS:
         for kind, suffix in KINDS.items():
             run_dir = args.runs_dir.expanduser() / f"{task}{suffix}"
+            if not run_dir.exists():
+                continue
             programs = load_programs(run_dir)
             if not programs:
                 print(f"[{task}/{kind}] no scored programs found in {run_dir}")

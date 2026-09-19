@@ -59,22 +59,38 @@ def run_candidate_sandboxed(
         with open(in_dir_p / "input.pkl", "wb") as f:
             pickle.dump(payload, f)
 
+        # Files are moved with `docker cp` instead of `-v` bind mounts: on
+        # Docker Desktop/WSL2 every bind mount leaks a mount entry that is
+        # never released, and after ~100k of them (a few hours of evolution)
+        # the daemon fails every new container with "no space left on device".
         container_name = f"ps3evolve-{uuid.uuid4().hex[:12]}"
-        cmd = [
-            "docker", "run", "--rm", "--name", container_name,
-            "--network", "none",
-            "--memory=3g", "--cpus=2", "--pids-limit=256",
-            "-v", f"{in_dir_p}:/work:ro",
-            "-v", f"{out_dir_p}:/output",
-            SANDBOX_IMAGE,
-        ]
-        try:
-            proc = subprocess.run(cmd, capture_output=True, timeout=timeout, text=True)
-        except subprocess.TimeoutExpired:
-            subprocess.run(["docker", "kill", container_name], capture_output=True)
-            raise CandidateError(f"timed out after {timeout}s")
 
+        def _docker(*args: str, t: int = 60) -> subprocess.CompletedProcess:
+            return subprocess.run(["docker", *args], capture_output=True, text=True, timeout=t)
+
+        created = _docker(
+            "create", "--name", container_name, "--network", "none",
+            "--memory=3g", "--cpus=2", "--pids-limit=256", SANDBOX_IMAGE,
+        )
+        if created.returncode != 0:
+            raise CandidateError(f"sandbox create failed: {created.stderr[-500:]}")
         result_path = out_dir_p / "result.pkl"
+        try:
+            copied = _docker("cp", f"{in_dir_p}/.", f"{container_name}:/work")
+            if copied.returncode != 0:
+                raise CandidateError(f"sandbox copy-in failed: {copied.stderr[-500:]}")
+            try:
+                proc = subprocess.run(
+                    ["docker", "start", "-a", container_name],
+                    capture_output=True, timeout=timeout, text=True,
+                )
+            except subprocess.TimeoutExpired:
+                _docker("kill", container_name, t=30)
+                raise CandidateError(f"timed out after {timeout}s")
+            _docker("cp", f"{container_name}:/work/result.pkl", str(result_path))
+        finally:
+            _docker("rm", "-f", container_name, t=60)
+
         if not result_path.exists():
             raise CandidateError(
                 f"sandbox produced no result (exit={proc.returncode}) stderr={proc.stderr[-800:]}"

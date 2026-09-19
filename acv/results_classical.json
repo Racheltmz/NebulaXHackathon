@@ -2,7 +2,7 @@
   "program_id": "12814012-563d-4094-ac3e-70cbe586e5c3",
   "iteration_found": 393,
   "checkpoint": "checkpoint_540",
-  "programs_scanned": 179,
+  "programs_scanned": 196,
   "metrics": {
     "combined_score": 0.9479,
     "traintest_metric": 1.0,

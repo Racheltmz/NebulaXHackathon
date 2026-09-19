@@ -9,7 +9,10 @@ import sys
 import traceback
 
 IN_PATH = "/work/input.pkl"
-OUT_PATH = "/output/result.pkl"
+# /output only exists when a bind mount provides it (legacy harness); the
+# current harness copies files in/out of /work with `docker cp` instead.
+import os
+OUT_PATH = "/output/result.pkl" if os.path.isdir("/output") else "/work/result.pkl"
 
 
 def load_module(path):

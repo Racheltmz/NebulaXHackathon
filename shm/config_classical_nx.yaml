@@ -1,0 +1,108 @@
+max_iterations: 2000
+checkpoint_interval: 10
+log_level: "INFO"
+random_seed: 42
+language: "python"
+file_suffix: ".py"
+early_stopping_patience: 300
+convergence_threshold: 0.0001
+early_stopping_metric: "combined_score"
+
+llm:
+  provider: "codex_cli"
+  temperature: 0.7
+  max_tokens: 8192
+  timeout: 300
+  retries: 2
+  retry_delay: 5
+  models:
+    - name: "default"
+      weight: 1.0
+
+prompt:
+  system_message: |
+    Improve only code inside EVOLVE-BLOCK markers in a scikit-learn/numpy/scipy
+    Model class (fit(self, X, y) / predict(self, X)).
+
+    HARD ENVIRONMENT CONSTRAINT: the sandbox that runs your code has ONLY numpy,
+    scikit-learn, and scipy installed. There is no GPU, no torch, no tensorflow,
+    no internet access. Do not import deep-learning or GPU libraries -- the
+    import will simply fail.
+
+    ENSEMBLING IS ENCOURAGED. You may combine multiple models
+    (VotingClassifier/StackingClassifier/bagging, multiple feature views voted
+    or stacked, snapshot ensembles with different random seeds, prototype/
+    nearest-neighbour retrieval fused with a discriminative model's score,
+    percentile- or class-specific calibrated thresholds) inside a single
+    fit()/predict() call -- that is fully within the rules. Each evaluation
+    call (one CV fold, or the final train/test split) runs fit() and predict()
+    together in a brand-new, isolated sandbox process with no memory of any
+    other call and no shared filesystem state across calls -- there is no way
+    to "cheat" by detecting which fold you're in, caching answers across
+    folds, or using information from one evaluation in another. Don't spend
+    effort on that; focus on making a single fit/predict pair as strong and
+    well-calibrated as possible.
+
+    Prefer classical, CPU-only approaches: engineered signal-processing/
+    statistical features (spectral stats, wavelets, moments, autocorrelation,
+    rainflow-style cycle counting, prototype/nearest-neighbour retrieval, etc.)
+    combined with scikit-learn models. Classical feature engineering plus a
+    scikit-learn classifier or ensemble has already been shown to work very
+    well for these tasks -- that is the direction to push, not raw model
+    complexity.
+
+    Known context from independent work on this same benchmark: Door is
+    reachable near-perfectly with a good temporal classifier; ACV performs
+    best when treated as within-case ranking/retrieval rather than plain
+    classification; Rail is hard to push past roughly 0.90-0.94 given only a
+    handful of minority-class recordings, so don't be discouraged if 0.99
+    isn't reached there -- keep improving honestly rather than overfitting
+    the harness. SHM has reached roughly 0.91 elsewhere with strong regression
+    feature engineering, so there is real room above the current result.
+
+    INPUT FORMAT (this track differs from the other SHM track): each example
+    is a 1-D float vector of label-free per-trace descriptors computed from the
+    raw 581,120-sample series -- layout [multiscale: 561 | generic: 44 |
+    rainflow: 83 | temporal: 150] (see initial_program.py docstring). The seed
+    program is the promoted model from an independent, earlier effort on this
+    exact task: log-target kernel-ridge/SVR views (SelectKBest by mutual
+    information) blended 0.4/0.6, then a clipped Ridge residual calibrator on
+    log amplitude / roughness covariates. It reports roughly 0.92-0.93 official
+    score under its own repeated-CV protocol. There are only 51 training
+    traces, so prefer low-variance changes; improvements must show up in the
+    3-fold and 5-fold scores and not just the fixed train/test split.
+
+    Preserve public interfaces (Model.__init__/fit/predict signatures) and all
+    hard constraints in problem.yaml. Favor correctness, then the documented
+    primary metric. Do not read holdout data, environment secrets, or files
+    outside the experiment. Never attempt network access -- it is disabled and
+    will fail.
+  num_top_programs: 3
+  num_diverse_programs: 2
+  include_artifacts: true
+  max_artifact_bytes: 4096
+
+database:
+  population_size: 50
+  archive_size: 20
+  num_islands: 3
+  random_seed: 42
+  feature_dimensions: ["code_length", "traintest_metric", "cv3_metric"]
+  feature_bins: 10
+  log_prompts: true
+
+evaluator:
+  timeout: 240
+  max_retries: 1
+  cascade_evaluation: false
+  parallel_evaluations: 1
+  enable_artifacts: true
+
+evolution_trace:
+  enabled: true
+  format: "jsonl"
+  include_code: true
+  include_prompts: true
+  output_path: "openevolve_output/evolution_trace.jsonl"
+
+diff_based_evolution: true
