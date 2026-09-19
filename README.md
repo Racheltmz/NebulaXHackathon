@@ -66,7 +66,7 @@ We spawned 8 tracks, 2 per subtask, to generate algorithms with two types of pro
 | **SHM** (1 − MAPE) | classical | **0.940** | **0.939** | **0.935** | **0.941** |
 |  | deep | 0.631 | 0.494 | 0.553 | 0.768 |
 
-| We report 5 Fold Stratified Cross Validation results as well although they are not taken into account for the combined score which is computed via `combined = 0.5 · cv3 + 0.5 · train/test`
+> We report 5 Fold Stratified Cross Validation results as well although they are not taken into account for the combined score which is computed via `combined = 0.5 · cv3 + 0.5 · train/test`
 
 As seen above, classical methods leads deep on every task. This is expected given the lack of data for generalisation for the deep learning models. Deep learning performs worst in **Rail** which is expected given 128 channels and insufficient data and labels to train a robust model.
 
