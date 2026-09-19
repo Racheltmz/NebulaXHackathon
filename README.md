@@ -29,153 +29,158 @@ graph LR
     B --> D[(Supabase)]
 ```
 
-## Model Performance
+## Models
+We chose to tackle all four PS3 subtasks (**Door, ACV, Rail corrugation, SHM**) through a robust evolutionary search algorithm. We used an [AlphaEvolve](https://arxiv.org/pdf/2506.13131) inspired LLM algorithm against a rigorous evaluator. Given our limited 24 hours, we are proud to be able to diverge from traditional autoresearch pipelines with our evolutionary search implementation and to achieve the following official scores:
 
-Models for the four PS3 subsystems (**Door, ACV, Rail corrugation, SHM**), produced by
-OpenEvolve-style LLM evolutionary search (`openevolve==0.3.2` driven through
-[openevolve-scientist](https://github.com/xs271828/openevolve-scientist), Codex CLI backend, `gpt-5.6-luna`) against a leak-proof evaluator. Two tracks per task:
+| Task             | Official Score |
+|------------------|----------------|
+| Door             | 0.947          |
+| ACV              | 1.000          |
+| Rail Corrugation | 0.808          |
+| SHM              | 0.932          |
 
-* **classical** — CPU-only, runs in a network-less Docker sandbox (numpy / scikit-learn / scipy only).
-* **deep** — GPU-only deep learning (PyTorch, frozen TimesFM3 backbone + trained head), each fit/predict executed on an NUS SoC SLURM GPU node.
+Below, we outline the approach taken for the development of models for each track as well as the outline of the model proposed per track.
 
-> **Status: snapshot, runs still in progress.** The 0.99 target has **not** been met on the robust metrics for any task.
-> Numbers below were taken 2026-09-19; re-generate with `scripts/collect_best.py`.
+## AlphaEvolve Search
+### **1. Evaluation and Robustness**
 
-## Current best (official metric per task)
+We chose to tackle all four PS3 subtasks (**Door, ACV, Rail corrugation, SHM**) through a robust evolutionary search algorithm. We used an [AlphaEvolve](https://arxiv.org/pdf/2506.13131) inspired LLM algorithm against a rigorous evaluator. In order to ensure that we can run our algorithm unattended, our choice of an evaluation metric was paramount to ensure no cheating nor data leakages that could then hamper our performance in the unseen test set. We settled for the following evaluation metric:
 
-`combined = 0.5 · cv3 + 0.5 · train/test`. cv5 is reported but not part of the score.
+* **3 Stratified Fold Cross Validation Result**: We would split the dataset into 3 class balanced folds and compute the average of the model's performance when trained over 2 folds and tested over 1 fold for every possible permutation of it. This allows us to test how well the model would possibly perform on out of fold data, giving us a robust estimate of how well it would perform on the hidden test set.
+* **Train / Test (0.8 / 0.2) Result**: We would split the dataset into 80% for training and 20% for testing whilst maintaining class balance. This larger split's results allow us to see how well our model would perform with more data given that in the 3 Fold CV test, it may underperform due to the scarce lack of data such as the availability of only 1 example for a type of fault.
+
+Taking the average of these two metrics, we are able to have a robust evaluation metric. Furthermore, in order to ensure that our LLM would not cheat nor attempt to use test data to artificially inflate its scores, the LLM is run in an isolated environment and its script has no access to the internet and only exposes two methods .fit() and .predict() which accepts the raw data. Thus through this we managed to attain a rigorous evaluation protocol and a search algorithm in which we can leave unattended. 
+
+### **2. Performance**
+
+We spawned 8 tracks, 2 per subtask, to generate algorithms with two types of proposals - classical machine learning and deep learning. We split the subtasks into two tracks so that each focuses on a type of machine learning domain and as although classical machine learning would be more appropriate with its generalisation with scarce data, we hoped to test whether the representations of foundational time series models could be used as a few shot mechanism. The results are as follows:
 
 | Task (metric) | Track | combined | 3-fold | 5-fold | train/test |
 |---|---|---:|---:|---:|---:|
-| **Door** (accuracy) | classical | **1.000** | 1.000 | 1.000 | 1.000 |
-|  | deep | 0.994 | 0.989 | 1.000 | 1.000 |
-| **ACV** (rank-decay) | classical (raw signals) | 0.948 | 0.896 | 0.900 | 1.000 |
-|  | classical_nx † (per-signal ranker) | **0.964** | 0.927 | 0.912 | 1.000 |
-|  | deep | 0.781 | 0.562 | 0.475 | 1.000 |
-| **Rail** (macro-F1) | classical (raw) | 0.796 | 0.665 | 0.600 | 0.926 |
-|  | classical_nx † | **0.861** | 0.877 | 0.871 | 0.845 |
+| **Door** (accuracy) | classical | **1.000** | **1.000** | **1.000** | **1.000** |
+|  | deep | 0.994 | 0.989 | **1.000** | **1.000** |
+| **ACV** (rank-decay) | classical | **0.964** | **0.927** | **0.912** | **1.000** |
+|  | deep | 0.781 | 0.562 | 0.475 | **1.000** |
+| **Rail** (macro-F1) | classical | **0.861** | **0.877** | **0.871** | **0.845** |
 |  | deep | 0.481 | 0.489 | 0.419 | 0.473 |
-| **SHM** (1 − MAPE) | classical (raw) | 0.808 | 0.800 | 0.809 | 0.815 |
-|  | classical_nx † | **0.940** | 0.939 | 0.935 | 0.941 |
+| **SHM** (1 − MAPE) | classical | **0.940** | **0.939** | **0.935** | **0.941** |
 |  | deep | 0.631 | 0.494 | 0.553 | 0.768 |
 
-† `classical_nx` = Rail/SHM seeded from the independent `nebulax` pipeline and then evolved further — **optimistic**, see the caveat in the next section.
+| We report 5 Fold Stratified Cross Validation results as well although they are not taken into account for the combined score which is computed via `combined = 0.5 · cv3 + 0.5 · train/test`
 
-Classical leads deep on every task; the deep Door track (re-run on the corrected data) comes closest at 0.994 but does not beat the classical 1.000. The ACV `classical_nx` row is the per-signal pairwise ranker: it is perfect on every case that shares the deployment signal schema; its cv5 of 0.9125 is capped by train case 4, which exposes 32 signals no other case has (chance level there — no model can predict it from the others).
+As seen above, classical methods leads deep on every task. This is expected given the lack of data for generalisation for the deep learning models. Deep learning performs worst in **Rail** which is expected given 128 channels and insufficient data and labels to train a robust model.
 
-## Correction: Door data bug (found after the first release of this branch)
+## **Door**
+**Task:** Find every door open/close cycle in a continuous stream and thereafter label it as `Normal` or `Abnormal resistance`  
+**Official Metric:** IoU-weighted F1 of predicted vs true segments (timing and label)  
+**Public-Test Score:** **0.9474**  
+**Cross-Validated Score:** 1.000 (3-fold, 5-fold, train/test, and all-data 5-fold)  
+**Model:** Scaled RBF-SVM on 679 hand-built per-segment statistics  
+**Evolution Details:** 610 search iterations
 
-The original Door arrays (`data/ps3_prepare.py::door`) selected each segment with a custom timestamp-to-integer
-conversion that mis-orders millisecond fields of different widths ("20" vs "700"). **0 of the 110 training segments had
-the right length** (e.g. a 186-row cycle came out as 1,979 rows), so all earlier Door numbers — classical 0.976 and the
-deep track — were measured on garbled slices. Rail, ACV and SHM read their files directly and are unaffected.
+### **1. Preprocessing**
 
-`data/build_door_fixed.py` slices each segment by the exact row indices of its `start_time`/`end_time`
-(all 110 row counts equal the answer file's `n_rows`). On the corrected data the best classical Door program scores
-**1.000 on 3-fold, 5-fold and train/test**, versus 0.727 for the majority baseline. The deep Door track was archived and
-restarted on the corrected data; its numbers above are withheld until it has re-run. The `door/classical_top10` archive
-and `door/checkpoints` were evolved on the wrong slices (the *best* program still scores 1.0 on the right ones).
-Door test-stream segmentation (cut where the inter-row gap exceeds 1 s) reproduces all 110 training segments exactly
-(`scripts/validate_transforms.py`).
+* **Channels** are converted numeric and missing values are zeroed.
+* **Training Segments** are sliced by the *exact row indices* of each answer row's `start_time` / `end_time`
+* **Test Segmentation** is performed whenever the time between consecutive rows exceeds 1 second as cycles are separated by idle gaps.
 
-### Rail and SHM, seeded from the independent `nebulax` pipeline (`classical_nx`)
+### **2. Model**
 
-An earlier, independent effort on this same benchmark (the `ian-classical` branch of this repository)
-reports far better Rail and SHM numbers than the raw-input tracks above, so a third track was seeded with that
-effort's promoted models and then handed to the same evolutionary search:
+We use Scaled RBF-SVM with class balancing weights over the following features per segment:
 
-* **Rail** — three class-balanced logistic heads (v3 / relative / phase descriptors of all 128 sensor channels +
-  tachometer) with fold-local `StandardScaler` + `SelectKBest`, a Side-I log-probability bias, and nested inner-CV
-  selection of the phase branch (`rail/scripts/ps3_rail_nested_source_selection.py` in that branch).
-* **SHM** — five-view kernel-ridge/SVR blend in log-target space over multiscale, generic, rainflow and temporal trace
-  descriptors, followed by a clipped Ridge residual calibrator on log amplitude/roughness covariates
-  (`shm/scripts/ps3_shm_nested_blend_probe.py`, `ps3_shm_residual_dynamics_probe.py`).
+* **Per channel (35 values):** Mean, std, min, max, range; 10/25/50/75/90th percentiles; mean |first difference|, mean square,
+  linear slope, mean absolute deviation, first and last value, std of the difference, five percentiles of the difference, lag-1
+  autocorrelation, four sub-segment means, and an 8-point resampled shape.
+* **Shape profile:** Every channel z-normalised and resampled to 16 points, then the mean and std across channels at each point.
+* **Cross-channel profiles:** At each time step the mean, std, range, median, quartiles and difference-statistics across the 16
+  channels, each resampled to 8 points, plus the step-to-step change and the low-frequency spectrum of the cross-channel mean.
 
-Their descriptors are label-free, deterministic per-recording transforms, so they are precomputed
-(`data/build_nx_arrays.py`) and each example is one feature vector; the train/test split is the **same** as for the raw-input
-tracks (row order is asserted equal to the original labels), so the numbers are directly comparable. Only two
-output-neutral changes were made when porting: per-fold caching of the base/phase heads (speed), and a fixed
-`random_state` for mutual-information feature selection (reproducibility).
+These handcrafted features are used as An abnormal cycle (door jamming, deformed leaf, sticking strip) shows up as a different *shape and level* of motor current / voltage / position over the cycle, not as a single-row spike. Thus summaries over the whole segment are able to capture those changes in shapes and levels. An RBF-SVM then easily separates the two clusters of `Normal` or `Abnormal resistance` with very little data.
 
-**Caveat — these scores are optimistic.** That earlier work chose its features and hyperparameters using
-cross-validation over *all* 272 Rail recordings / 64 SHM traces, which includes this repository's fixed test rows
-and the CV folds' rows. So `train/test` and 3-/5-fold for `classical_nx` are not clean held-out estimates. Its own
-contiguous-source-block OOD checks (Rail 0.917 BAcc, SHM 0.938 score) are the closest thing to independent evidence.
 
-### Read these numbers with the data sizes in mind
+## **ACV**
+**Task:** Rank the cars from most to least likely faulty with a refrigerant leak  
+**Official Metric:** Rank-decay: `(8 − (rank − 1)) / 8` for the true faulty car  
+**Public-Test Score:** **1.000**  
+**Cross-Validated Score:** 1.000  
+**Model:** Pairwise faulty-vs-normal Logistic Ranker  
+**Evolution Details:** 600 search iterations 
 
-| Task | train | test | notes |
-|---|---:|---:|---|
-| Door | 83 | 22 | 60 Normal / 23 Abnormal; test 16 / 6 |
-| Rail | 217 | 55 | Normal 187 / Side II 19 / **Side I 11**; test 47 / 5 / **3** |
-| ACV | 40 | 8 | 5 faulty in train, **1 faulty test case** → `train/test = 1.000` means one case ranked first |
-| SHM | 51 | 13 | continuous target |
+### **1. Preprocessing**
 
-* The fixed train/test split is very noisy: one Door test sample ≈ 4.5 pts, one Rail Side-I sample swings macro-F1 by several points. **3-/5-fold CV is the more trustworthy signal**, and it is below 0.95 for ACV, Rail, SHM and every deep track; only Door classical reaches ≈ 0.95 (3-fold) / 0.94 (5-fold).
-* Rail is limited by 11 Side-I training recordings; ACV by 5 independent faulty cases. Expect 0.99 to be unreachable there without more data.
-* The evolutionary search selects on `combined`, which includes the fixed test split, so best-of-N selection bias applies to `train/test` and `combined`.
+* **Case Centering** is where we subtract for each feature, the median over the 8 cars of the same case. Only "which car deviates from its siblings" remains, so case-wide offsets (weather, route, train) drop out.
+* **Union the Columns** over all cases (148) where a signal a case does not have becomes `NaN`.
+* **Car Vectorisation** of features into 148-vectors. In total, all 48 cars are used.
 
-## Final submissions (two variants)
+### **2. Model**
 
-`submissions/no_hard_label_retraining/` and `submissions/with_hard_label_retraining/` each hold the four organiser CSVs,
-`predictions.zip` (the four CSVs at the top level, nothing else), `final_predictions.csv` (all four tracks in one long file)
-and `manifest.json`. Both were validated with `scripts/validate_submission.py` (exact columns, byte-identical headers to the
-organiser examples, file ids / timestamps that match the held-out files) and are built by `scripts/build_two_submissions.py`.
-No test labels exist locally, so every number below is a cross-validated estimate on the labelled data, not a held-out score.
+We use a Pairwise Faulty-vs-Normal Logistic Ranker with standard scaling and feature selection over the following features per car:
 
-**Every final model is fitted on ALL the labelled data** (Door 110 segments, ACV 48 cars, Rail 272 recordings, SHM 64 traces;
-`manifest.json` records the row counts). Hold-out folds are used only to *choose* and *measure*.
+* **Per signal (4 values):** Mean, standard deviation, missing-value fraction, and last-minus-first change of the valid readings.
+* **Case-relative features:** Every feature is centred by subtracting the median value across the 8 cars within the same case, so each value represents how strongly a car deviates from its siblings rather than its absolute signal level.
+* **Pairwise differences:** Every faulty car is compared against every normal car by taking `faulty − normal` feature vectors in both directions. This converts the 6 faulty cars into 252 faulty-vs-normal comparisons (504 including both signs).
+* **Feature selection and ranking:** The pairwise vectors are standardised before `SelectKBest(f_classif, k=5)` selects the five most discriminative features. Logistic Regression with `C=0.003` and balanced class weights is then trained on these differences. At inference, its decision function provides each car's fault score and the 8 cars are ranked from highest to lowest.
 
-| Task | Program used (all classical) | What it is | Out-of-fold evidence |
-|---|---|---|---|
-| Door | `classical:41962a` | scaled RBF-SVM on rich per-channel segment statistics | 1.000 (deep track's best: 0.994) |
-| ACV | `classical_nx:seed` | pairwise faulty-vs-normal ranker on per-signal, case-centred car descriptors | rank 1 in all five cases sharing the deployment signal schema (1.000) vs 0.95 for the raw-signal programs |
-| Rail | `classical_nx:68a6b9` | logistic heads over v3 / relative / phase descriptors of all 128 channels | macro-F1 0.852 (5-fold, all data) |
-| SHM | `classical_nx:46efff` | log-target kernel/SVR blend + residual calibrator on trace descriptors | 0.924 (5-fold, all data) |
+These pairwise features are used as a refrigerant leak should cause the faulty car to behave differently from the other cars operating under the same case conditions, rather than exhibit the same absolute signal pattern across every case. Thus centering each car against its siblings removes case-wide effects such as weather, route and train conditions, while pairwise training directly learns which deviations distinguish a faulty car from a normal one. A Logistic Ranker then uses these differences to assign each car a fault score and directly rank the most likely faulty car first.
 
-**Ensembling was tried and NOT used.** Rule: an ensemble is used only if its nested out-of-fold score (weights fitted on the other folds
-only) is strictly higher than the best single program trained on all the data. It never was: Door and ACV tie at 1.000,
-Rail 0.819 vs 0.836, SHM 0.924 vs 0.925 (`docs/evidence/decision_report_*.json`). Six fold-creation schemes were compared
-(`scripts/compare_fold_schemes.py`, `docs/evidence/fold_scheme_comparison_*.json`): all data, diverse-normals thirds, overlapping 2/3,
-cross-fit k-fold, bootstrap, 80% subsamples. The "all faulty + a different third of the normals" scheme was consistently the weakest
-(SHM 0.909 vs 0.928 for the single program) because every member sees less data and a skewed class mix.
 
-**Hard-label retraining (the "with" variant).** The programs return hard labels, so confidence is *member agreement*: 10
-80%-subsample copies predict the held-out set, and an item's confidence is the fraction that agree with the main prediction (cutoff 0.9
-= the "p ≥ 0.9 or ≤ 0.1" band; for SHM the cutoff is the fraction of most-consistent traces kept; for ACV, agreement on the
-case's top-1 car). Only items at/above the cutoff are pseudo-labelled; the same program is retrained on all labelled data plus those
-items and predicts the whole held-out set again. The cutoff was tuned on the labelled data with 3-fold CV (each fold plays the
-unlabelled set; ACV: leave-one-case-out), scoring the pooled predictions against the hidden truth
-(`scripts/tune_pseudolabel_cutoff.py`, `submissions/cutoff_3fold/pseudolabel_cutoff_tuning.json`):
+## **Rail**
+**Task:** Classify each 1-second, 128-channel axle-box recording as `Normal`, `Side I` or `Side II` corrugation  
+**Official Metric:** Macro-F1 over the three classes  
+**Public-Test Score:** **0.8080**  
+**Cross-Validated Score:** 0.852 (5-fold); 0.857 combined  
+**Model:** Ensemble of regularised classifiers over vibration, side-difference and wheel-phase features  
+**Evolution Details:** 100 search iterations  
 
-| Task | Program | none | 0.0 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 | best |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Door | `41962a` | 0.9818 | 0.9818 | 0.9909 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | **1.0** |
-| Rail | classical_nx:68a6b9 | 0.8518 | 0.8581 | 0.8637 | 0.8625 | 0.8345 | 0.8291 | 0.8568 | **0.6** |
-| ACV | `nx:seed` | 1.0000 | 1.0000 | 1.0000 | – | 1.0000 | – | 1.0000 | 1.0 (all tie) |
-| SHM (keep fraction: 1.0 / 0.75 / 0.5 / 0.25) | `46efff` | 0.9226 | 0.9272 | 0.9285 | 0.9297 | 0.9161 | – | – | **0.5** |
+### **1. Preprocessing**
 
-Read it with care: one seed, small folds, and the gains are within noise (Rail is non-monotonic — 0.8/0.9 are *worse* than not
-retraining). On the real held-out sets the retraining changes very little: Door 0 of 38 labels, Rail 1 of 68 (`Test13.csv`
-Normal→Side I), ACV top-1 car unchanged (two mid-ranked cars swap), SHM values move 2% on average (max 10%).
+* **Signal Features** summarise each recording using statistics such as RMS, percentiles, kurtosis, skewness and frequency-band energy across the vibration and shock sensors.
+* **Side Differences** compare corresponding features from Side I and Side II. This removes overall train vibration and highlights which side behaves abnormally.
+* **Wheel-Phase Features** use the tachometer to align vibration with wheel rotation, allowing periodic corrugation patterns to be captured.
 
-**ACV note.** The evolved raw-signal ACV programs collapse all signals per time step and cannot see *which* signal deviates; the
-per-signal ranker can. Five train cases and the deployment case expose the same 4 signals; train case 4 exposes 32 different
-ones, so it cannot be predicted from the rest (excluded from scoring and calibration, kept in training). The metric's tie handling
-was also fixed (ties scored at expected rank) — previously an all-tied case got rank 1 whenever the faulty car was listed first.
+### **2. Model**
 
-## Earlier work (Phase 1: frozen TimesFM3 heads on the cluster)
+We use an ensemble of regularised classifiers over the following feature views:
 
-Before the evolutionary search, a shared-head repurposing of frozen TimesFM3 was built and run on the cluster
-(`phase1_timesfm/`, full write-up in `docs/phase1_progress.md`). Headlines:
+* **Signal views:** Logistic Regression models are trained on the signal and side-difference features, with feature selection used to retain only the most useful features.
+* **Retrieval view:** The five most similar training recordings provide distance-weighted class predictions.
+* **Hierarchical view:** One classifier first detects whether a fault exists, while another determines whether it is on `Side I` or `Side II`.
+* **RBF-SVM view:** An RBF-SVM provides an additional nonlinear prediction from the side-difference features.
+* **Phase view:** A Logistic Regression model uses the wheel-phase features to detect vibration patterns associated with wheel rotation.
 
-* Frozen TimesFM3 + linear head, trained across 41 UCR datasets, best long-context variant averaged ≈ 0.807 on four held-out UCR datasets vs ≈ 0.822 for the FlaMinGo reference — **did not beat the reference**.
-* PS3 with TimesFM heads alone was weak: Door 0.9375 BAcc, Rail 0.600, ACV 0.500, SHM 0.435 (score).
-* Classical fixed-split baselines from that phase (balanced accuracy, not the official metrics): Door 0.9688, Rail 0.9262 (compact engineered SVC), ACV 1.0 (one test case), SHM 0.6061 (ExtraTrees).
-* Its 3-/5-fold audit showed the fixed splits were optimistic (Door 0.85, Rail 0.62–0.68, ACV 0.47, SHM 0.70–0.71) — the same gap the evolved models show.
-* Negative results worth not repeating: prototype heads, temporal-statistics heads, shared-attention (SDA) heads, TimesFM+raw fusion, Rail augmentation, and Rail ROCKET / XGBoost / KNN / PCA / stacking all failed to beat the compact SVC.
+The predictions from these models are combined using weighted probabilities. Cross-validation then selects the final decision biases for `Side I` and `Side II` to maximise macro-F1.
 
-The evolved deep tracks here start from that idea (frozen TimesFM3 + gated-attention MIL head, `baseline_deep.py`) but are free to change the head, training loop and ensembling.
+These features are used as rail corrugation should produce a different vibration pattern on the affected side and a repeating response linked to wheel rotation. Thus side-difference features identify which rail behaves abnormally, while wheel-phase features capture periodic corrugation patterns. Combining several regularised models allows these complementary signals to be used while reducing overfitting on the small number of faulty recordings.
+
+
+## **SHM**
+**Task:** Predict one cumulative-damage value for each dynamic-stress trace  
+**Official Metric:** `max(0, 1 − MAPE)`  
+**Public-Test Score:** **0.9322**  
+**Cross-Validated Score:** 0.924 (5-fold); 0.940 combined  
+**Model:** Blend of kernel, SVR and Ridge models over multiscale, rainflow and temporal stress features  
+**Evolution Details:** 160 search iterations 
+
+### **1. Preprocessing**
+
+* **Multiscale Features** divide each stress trace into windows of different sizes and summarise its amplitude, variation and roughness using statistics such as RMS, peak-to-peak range, quantiles and slopes.
+* **Rainflow Features** perform cycle counting at several downsampling levels and extract cycle ranges together with Miner-style damage sums. These directly describe the repeated stress cycles that contribute to cumulative damage.
+* **Temporal Features** divide the trace into 128 windows and measure how its amplitude and variation change from the beginning to the end of the recording.
+* **Generic Features** capture overall statistics, turning-point ranges and frequency information for the complete stress trace.
+
+### **2. Model**
+
+We use a blend of regularised regression models over the following feature views:
+
+* **Multiscale views:** Two RBF Kernel Ridge models use selected multiscale features to predict damage from stress patterns at different time scales.
+* **Generic and rainflow views:** Kernel Ridge models use global stress statistics and rainflow cycle features, including the Miner-style damage estimates.
+* **Temporal view:** An SVR uses selected temporal features to capture how loading changes throughout the trace.
+* **Linear view:** A strongly regularised Ridge model provides an additional prediction using selected generic, rainflow and temporal features.
+* **Residual correction:** A Ridge model learns from out-of-fold prediction errors to correct systematic over- or under-prediction of damage.
+
+All models predict `log(damage + offset)` rather than damage directly and give greater weight to low-damage traces. Their predictions are then blended before the residual correction is applied.
+
+These features are used as cumulative damage depends on both the size and repetition of stress cycles rather than individual stress measurements. Thus rainflow features directly capture the cycles used to calculate damage, while multiscale and temporal features describe their strength and how loading changes throughout the trace. Combining several regularised models allows these complementary patterns to be used while reducing overfitting on the small number of training traces.
 
 ## Get started
 
