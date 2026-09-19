@@ -1,9 +1,0 @@
-# Orchestration / local (classical) tracks -- run inside the OpenEvolve venv
-openevolve==0.3.2
-numpy
-scipy
-scikit-learn
-pandas
-pyyaml
-# Classical candidates execute inside sandbox/Dockerfile (numpy 1.26.4, scikit-learn 1.5.2, scipy 1.13.1) -- no torch there.
-# Deep candidates execute on a GPU node (torch + TimesFM3 from the cluster venv); nothing torch-related is needed locally.
