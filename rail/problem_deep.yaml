@@ -1,0 +1,37 @@
+name: "ps3-rail-gpu"
+objective: "Maximize Rail corrugation macro-F1 (Normal/Side I/Side II) via GPU deep learning ONLY (frozen/fine-tuned TimesFM3 + trained neural head) on the NUS SoC cluster."
+primary_metric: "combined_score"
+report_language: "en"
+search_dataset: "../data/ps3_arrays/rail_train_x.npy"
+holdout_dataset: "../data/ps3_arrays/rail_test_x.npy"
+iterations: 2000
+seeds: [11, 23, 47]
+hard_constraints:
+  - "Model.fit(self, X, y) and Model.predict(self, X) signatures must not change."
+  - "predict() must never receive labels; fit() must never read holdout data."
+  - "Final predictor must be a trained neural network (PyTorch) -- no classical/non-neural models."
+  - "fit() must complete in well under 10 minutes on one GPU."
+weak_baselines:
+  - "baseline_deep.py (frozen TimesFM3 + gated-attention MIL head)"
+strong_baselines:
+  - "classical CPU track's evolved SVC+spectral-features solution (external, same task, ~0.75-0.80 combined_score)"
+program_contract:
+  enforce_public_signatures: true
+model_context:
+  minimum_context_window_tokens: null
+  utilization: 0.8
+  chars_per_token: 2.0
+  fixed_prompt_reserve_tokens: 2048
+  artifact_reserve_tokens: 4096
+code_budget:
+  growth_ratio: 1.5
+  growth_allowance_chars: 6000
+  hard_max_chars: 24000
+runtime:
+  docker:
+    profile: null
+budget:
+  max_iterations: 2000
+  max_wall_time_minutes: null
+  max_estimated_cost_usd: null
+  estimated_cost_per_iteration_usd: null

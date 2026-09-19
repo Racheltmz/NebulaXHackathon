@@ -1,0 +1,13 @@
+{
+  "program_id": "df6e41fb-6f9b-42a9-9b9d-190d06166c10",
+  "iteration_found": 23,
+  "checkpoint": "checkpoint_55",
+  "programs_scanned": 18,
+  "metrics": {
+    "combined_score": 0.6458,
+    "traintest_metric": 0.75,
+    "cv3_metric": 0.5417,
+    "cv5_metric": 0.475,
+    "code_length": 6949.0
+  }
+}

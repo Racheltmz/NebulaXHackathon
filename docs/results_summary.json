@@ -1,0 +1,106 @@
+{
+  "door/classical": {
+    "program_id": "3482bae6-4987-4745-b65d-321678defcc9",
+    "iteration_found": 369,
+    "checkpoint": "checkpoint_540",
+    "programs_scanned": 252,
+    "metrics": {
+      "combined_score": 0.976,
+      "traintest_metric": 1.0,
+      "cv3_metric": 0.9519,
+      "cv5_metric": 0.9397,
+      "code_length": 5623.0
+    }
+  },
+  "door/deep": {
+    "program_id": "001be4fb-5de0-4118-814e-2fb8dfa8c470",
+    "iteration_found": 13,
+    "checkpoint": "checkpoint_55",
+    "programs_scanned": 16,
+    "metrics": {
+      "combined_score": 0.9109,
+      "traintest_metric": 0.9545,
+      "cv3_metric": 0.8673,
+      "cv5_metric": 0.8412,
+      "code_length": 7975.0
+    }
+  },
+  "acv/classical": {
+    "program_id": "12814012-563d-4094-ac3e-70cbe586e5c3",
+    "iteration_found": 393,
+    "checkpoint": "checkpoint_540",
+    "programs_scanned": 170,
+    "metrics": {
+      "combined_score": 0.9479,
+      "traintest_metric": 1.0,
+      "cv3_metric": 0.8958,
+      "cv5_metric": 0.9,
+      "code_length": 3534.0
+    }
+  },
+  "acv/deep": {
+    "program_id": "df6e41fb-6f9b-42a9-9b9d-190d06166c10",
+    "iteration_found": 23,
+    "checkpoint": "checkpoint_55",
+    "programs_scanned": 18,
+    "metrics": {
+      "combined_score": 0.6458,
+      "traintest_metric": 0.75,
+      "cv3_metric": 0.5417,
+      "cv5_metric": 0.475,
+      "code_length": 6949.0
+    }
+  },
+  "rail/classical": {
+    "program_id": "468ad45f-04d6-4a26-bcb1-d9f9975231b0",
+    "iteration_found": 362,
+    "checkpoint": "checkpoint_370",
+    "programs_scanned": 183,
+    "metrics": {
+      "combined_score": 0.7958,
+      "traintest_metric": 0.9262,
+      "cv3_metric": 0.6653,
+      "cv5_metric": 0.5996,
+      "code_length": 4674.0
+    }
+  },
+  "rail/deep": {
+    "program_id": "4dde9ef0-0869-4ca9-ad4f-77f8ec9ae37d",
+    "iteration_found": 1,
+    "checkpoint": "checkpoint_55",
+    "programs_scanned": 11,
+    "metrics": {
+      "combined_score": 0.481,
+      "traintest_metric": 0.4732,
+      "cv3_metric": 0.4888,
+      "cv5_metric": 0.4188,
+      "code_length": 6811.0
+    }
+  },
+  "shm/classical": {
+    "program_id": "e550dd78-f6b6-4556-8112-7db98576323c",
+    "iteration_found": 260,
+    "checkpoint": "checkpoint_260",
+    "programs_scanned": 171,
+    "metrics": {
+      "combined_score": 0.7815,
+      "traintest_metric": 0.8554,
+      "cv3_metric": 0.7075,
+      "cv5_metric": 0.7528,
+      "code_length": 5422.0
+    }
+  },
+  "shm/deep": {
+    "program_id": "091f5c03-ae9b-4a58-870c-685a2d275448",
+    "iteration_found": 24,
+    "checkpoint": "checkpoint_55",
+    "programs_scanned": 8,
+    "metrics": {
+      "combined_score": 0.6225,
+      "traintest_metric": 0.7919,
+      "cv3_metric": 0.4531,
+      "cv5_metric": 0.5077,
+      "code_length": 9194.0
+    }
+  }
+}

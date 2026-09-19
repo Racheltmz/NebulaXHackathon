@@ -1,0 +1,94 @@
+max_iterations: 2000
+checkpoint_interval: 5
+log_level: "INFO"
+random_seed: 42
+language: "python"
+file_suffix: ".py"
+early_stopping_patience: 300
+convergence_threshold: 0.0001
+early_stopping_metric: "combined_score"
+
+llm:
+  provider: "codex_cli"
+  temperature: 0.7
+  max_tokens: 8192
+  timeout: 300
+  retries: 2
+  retry_delay: 5
+  models:
+    - name: "gpt-5.6-luna"
+      weight: 1.0
+
+prompt:
+  system_message: |
+    Improve only code inside EVOLVE-BLOCK markers in a PyTorch Model class
+    (fit(self, X, y) / predict(self, X)) that runs on a GPU compute node on
+    the NUS SoC SLURM cluster.
+
+    HARD CONSTRAINT: DEEP LEARNING ONLY. Do not use scikit-learn, XGBoost, or
+    any other classical/non-neural model as the final predictor -- that is
+    explicitly out of scope for this track (a sibling track already covers
+    classical methods). Everything that makes the final prediction must be a
+    neural network trained with gradient descent (PyTorch). You MAY still use
+    numpy for cheap deterministic feature engineering (e.g. resampling,
+    windowing, spectral transforms) as long as the result feeds a trainable
+    neural network, not a classical model.
+
+    The environment has torch with CUDA, a frozen pretrained TimesFM3
+    foundation model (loaded via TIMESFM_SRC/CHECKPOINT already wired up in
+    the baseline), numpy, and scipy. The baseline extracts frozen TimesFM3
+    embeddings and trains a small gated-attention MIL pooling head + MLP
+    end-to-end -- you can keep this backbone and improve the head/pooling/
+    training procedure, replace the pooling entirely, add a small trainable
+    CNN/attention encoder on top of or instead of the frozen embeddings,
+    fine-tune part of TimesFM3 if useful, or design a different neural
+    architecture altogether. All of that is fair game as long as it is a
+    genuine trained neural network.
+
+    ENSEMBLING IS ENCOURAGED: snapshot ensembles (multiple random seeds
+    averaged), multi-head/multi-branch fusion, test-time augmentation
+    averaged across several augmented views, are all fully within the rules.
+    Each evaluation call (one CV fold, or the final train/test split) runs
+    fit() and predict() together in a brand-new, isolated SLURM job with no
+    memory of any other call and no shared filesystem state across calls --
+    there is no way to "cheat" by detecting which fold you're in or caching
+    answers across folds. This cluster is shared and does have outbound
+    network access (unlike a fully sandboxed environment), but true labels
+    for whatever a call is being scored on are never uploaded here in the
+    first place, so there is nothing to gain by trying anyway -- focus all
+    effort on making a single fit/predict pair as strong as possible.
+
+    Keep runtime reasonable: a full fit() should complete in well under 10
+    minutes on one H100 GPU. Preserve public interfaces (Model.__init__/fit/
+    predict signatures) and all hard constraints in problem.yaml. Favor
+    correctness, then the documented primary metric. Do not read holdout
+    data, environment secrets, or files outside the experiment.
+  num_top_programs: 3
+  num_diverse_programs: 2
+  include_artifacts: true
+  max_artifact_bytes: 4096
+
+database:
+  population_size: 50
+  archive_size: 20
+  num_islands: 3
+  random_seed: 42
+  feature_dimensions: ["code_length", "traintest_metric", "cv3_metric"]
+  feature_bins: 10
+  log_prompts: true
+
+evaluator:
+  timeout: 3600
+  max_retries: 1
+  cascade_evaluation: false
+  parallel_evaluations: 1
+  enable_artifacts: true
+
+evolution_trace:
+  enabled: true
+  format: "jsonl"
+  include_code: true
+  include_prompts: true
+  output_path: "openevolve_output/evolution_trace.jsonl"
+
+diff_based_evolution: true

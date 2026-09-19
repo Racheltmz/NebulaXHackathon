@@ -1,0 +1,2 @@
+# small checkpoint archives (top-K evolved programs) are stored in Git LFS
+*/checkpoints/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text

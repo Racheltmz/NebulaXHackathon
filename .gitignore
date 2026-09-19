@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+runs/
+data/ps3_arrays/
+data/NebulaX-Hackathon-ProblemStatement/
+*.npy
+*.pt
+*.pkl
+openevolve_output*/
