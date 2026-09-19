@@ -3,7 +3,7 @@
 Each subsystem reports its own kind of output (SHM a damage grade, Door and Rail a status, ACV a
 car ranking). This maps every one onto the same three tones so an engineer can scan the column by
 colour: normal (green), warning (amber) and fault (red). Display-only — it never goes into the
-`*_predictions.csv` downloads, whose schema is fixed by the spec.
+`*_predictions.csv` downloads, whose columns mirror the training label files.
 """
 
 from .severity import compute_severity

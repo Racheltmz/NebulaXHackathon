@@ -146,7 +146,7 @@ def download_job(job_id: str, db: Session = Depends(get_db)):
         }
         for r in rows
     ]
-    csv_bytes = rows_to_csv_bytes(job.subsystem, row_dicts)
+    csv_bytes = rows_to_csv_bytes(job.subsystem, row_dicts, (job.summary or {}).get("segment_info"))
     filename = f"{job.subsystem}_predictions.csv"
     return StreamingResponse(
         iter([csv_bytes]),

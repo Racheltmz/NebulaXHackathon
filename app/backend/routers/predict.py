@@ -62,7 +62,7 @@ async def run_prediction(
             {"filename": f.filename, "storage_path": storage_path, "size_bytes": len(f.content)}
         )
 
-    output_csv = rows_to_csv_bytes(subsystem_key, result.rows)
+    output_csv = rows_to_csv_bytes(subsystem_key, result.rows, result.summary.get("segment_info"))
     output_storage_path = f"{job_id}/{subsystem_key}_predictions.csv"
     try:
         storage.upload_file(config.PREDICTIONS_BUCKET, output_storage_path, output_csv, "text/csv")

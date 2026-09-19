@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from db import PredictionJob, PredictionRow, get_db
-from ml.export import rows_to_csv_bytes
+from ml.export import rows_to_csv_bytes, segment_info_from_summaries
 from ml.result import compute_result
 from ml.severity import compute_severity
 from ml.subsystems import SUBSYSTEMS
@@ -52,8 +52,9 @@ def list_history(
             subsystem=job.subsystem,
             status=job.status,
             input_files=[InputFileInfo(**f) for f in job.input_files],
-            # ACV's per-car telemetry is large and only the run dashboard plots it.
-            summary={k: v for k, v in (job.summary or {}).items() if k != "telemetry"},
+            # ACV's per-car telemetry is large and only the run dashboard plots it; Door's
+            # segment_info only feeds the CSV export.
+            summary={k: v for k, v in (job.summary or {}).items() if k not in ("telemetry", "segment_info")},
             created_at=job.created_at,
             severity=compute_severity(job.subsystem, rows_by_job[job.id]),
             result=compute_result(job.subsystem, rows_by_job[job.id]),
@@ -119,9 +120,9 @@ def subsystem_dashboard(subsystem: str = Query(...), db: Session = Depends(get_d
 
 @router.get("/download")
 def download_subsystem_predictions(subsystem: str = Query(...), db: Session = Depends(get_db)):
-    """One `<subsystem>_predictions.csv` covering every finished run of that subsystem, in the
-    schema PS3 Section 4.1 asks for — this is the file that goes into predictions.zip. Runs are
-    one-file-each, so this stitches them back together.
+    """One `<subsystem>_predictions.csv` covering every finished run of that subsystem, laid out
+    like that subsystem's labelled training file (see ml/export.py). Runs are one-file-each, so
+    this stitches them back together.
     """
     rows = _latest_rows(db, subsystem)
     if not rows:
@@ -130,8 +131,17 @@ def download_subsystem_predictions(subsystem: str = Query(...), db: Session = De
             detail=f"No completed {SUBSYSTEMS[subsystem].label} runs yet — run a prediction first.",
         )
 
+    segment_info = None
+    if subsystem == "door":
+        jobs = (
+            db.query(PredictionJob)
+            .filter(PredictionJob.id.in_(list({r.job_id for r in rows})))
+            .order_by(PredictionJob.created_at.asc())
+        )
+        segment_info = segment_info_from_summaries(job.summary for job in jobs)
+
     return StreamingResponse(
-        iter([rows_to_csv_bytes(subsystem, [_row_dict(r) for r in rows])]),
+        iter([rows_to_csv_bytes(subsystem, [_row_dict(r) for r in rows], segment_info)]),
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{subsystem}_predictions.csv"'},
     )

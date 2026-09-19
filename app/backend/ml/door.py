@@ -74,6 +74,7 @@ def predict(files: list[UploadedFile]) -> PredictionResult:
     model = _load_model()
     rows = []
     telemetry = {}
+    segment_info = {}
     for f in files:
         df = pd.read_csv(io.BytesIO(f.content))
 
@@ -96,7 +97,15 @@ def predict(files: list[UploadedFile]) -> PredictionResult:
                 labels[i] = str(label)
 
         times = df.Datetime.astype(str).to_numpy()
+        close = pd.to_numeric(df["Close command"], errors="coerce").fillna(0).to_numpy()
+        open_ = pd.to_numeric(df["Open command"], errors="coerce").fillna(0).to_numpy()
         for (start, end), label in zip(bounds, labels):
+            # The two columns the answer file's `operation` and `n_rows` are read off: whichever
+            # command is active for most of the cycle, and the cycle's row count.
+            segment_info[times[start]] = {
+                "operation": "Close" if close[start : end + 1].sum() >= open_[start : end + 1].sum() else "Open",
+                "n_rows": end - start + 1,
+            }
             rows.append(
                 {
                     "file_id": None,
@@ -111,6 +120,9 @@ def predict(files: list[UploadedFile]) -> PredictionResult:
         "segments": len(rows),
         "abnormal": abnormal,
         "telemetry": telemetry,
+        # Keyed by segment start_time. Kept in the summary, not the rows, so the CSV export can
+        # fill Train_Segments_Answer.csv's operation/n_rows without new prediction_rows columns.
+        "segment_info": segment_info,
         "model": "gap segmentation + evolved classical SVC",
     }
     return PredictionResult(rows=rows, summary=summary)

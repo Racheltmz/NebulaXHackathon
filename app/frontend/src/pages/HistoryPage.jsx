@@ -414,7 +414,7 @@ export default function HistoryPage() {
       <div className="download-panel">
         <div>
           <strong>Download predictions</strong>
-          <p>One CSV per subsystem covering all its runs, in the submission format (goes into predictions.zip).</p>
+          <p>One CSV per subsystem covering all its runs, in the same columns as that subsystem's training label file.</p>
         </div>
         <select value={downloadKey} onChange={(e) => setDownloadKey(e.target.value)} aria-label="Subsystem to download">
           <option value="" disabled>
